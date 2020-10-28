@@ -25,6 +25,7 @@ import com.drew.metadata.Metadata;
 import com.drew.metadata.heif.HeifBoxHandler;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 
 public class HeifMetadataReader
 {
@@ -34,5 +35,19 @@ public class HeifMetadataReader
         Metadata metadata = new Metadata();
         new HeifReader().extract(inputStream, new HeifBoxHandler(metadata));
         return metadata;
+    }
+    
+    /**
+     * Reads Exif and ICC profile bytes from an {@link InputStream} using the handler instance.
+     * @param inputStream a stream from which the file data may be read.  The stream must be positioned at the
+     *                    beginning of the file's data.
+     * @return byte array of Exif and ICC profile data.     
+     */
+    @NotNull
+    public static byte[] readBytes(@NotNull InputStream inputStream)
+    {
+        Metadata metadata = new Metadata();
+        byte[] data = new HeifReader().readBytes(inputStream, new HeifBoxHandler(metadata));
+        return data;
     }
 }

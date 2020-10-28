@@ -28,6 +28,7 @@ import com.drew.metadata.Metadata;
 import com.drew.metadata.heif.boxes.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -83,9 +84,32 @@ public class HeifBoxHandler extends HeifHandler<HeifDirectory>
         }
         return this;
     }
+    
+    @Override
+    public HeifHandler<?> processBoxToReadBytes(@NotNull Box box, @NotNull byte[] payload) throws IOException
+    {
+        if (payload != null) {
+            SequentialReader reader = new SequentialByteArrayReader(payload);
+            if (box.type.equals(HeifBoxTypes.BOX_FILE_TYPE)) {
+                processFileType(reader, box);
+            } else if (box.type.equals(HeifBoxTypes.BOX_HANDLER)) {
+                handlerBox = new HandlerBox(reader, box);
+                return handlerFactory.getHandler(handlerBox, metadata);
+            }
+        }
+        return this;
+    }
 
     @Override
     public void processContainer(@NotNull Box box, @NotNull SequentialReader reader) throws IOException
+    {
+        if (box.type.equals(HeifContainerTypes.BOX_METADATA)) {
+            new FullBox(reader, box);
+        }
+    }
+    
+    @Override
+    public void processContainerToReadBytes(@NotNull Box box, @NotNull SequentialReader reader) throws IOException
     {
         if (box.type.equals(HeifContainerTypes.BOX_METADATA)) {
             new FullBox(reader, box);

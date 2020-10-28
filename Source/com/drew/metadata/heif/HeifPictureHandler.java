@@ -31,6 +31,7 @@ import com.drew.metadata.heif.boxes.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -113,6 +114,47 @@ public class HeifPictureHandler extends HeifHandler<HeifDirectory>
             PixelInformationBox pixelInformationBox = new PixelInformationBox(reader, box);
             pixelInformationBox.addMetadata(directory);
         }
+        
+        return this;
+    }
+    
+    /**
+     * Reads ICC profile bytes from the given reader instance and fills the metadata byte array 
+     * @param box represents the current box instance.
+     * @param handler the handler class instance.
+     * return handler instance based on the given box type.
+     */
+    @Override
+    protected HeifHandler<?> processBoxToReadBytes(@NotNull Box box, @NotNull byte[] payload) throws IOException
+    {
+        SequentialReader reader = new SequentialByteArrayReader(payload);
+        if (box.type.equals(HeifBoxTypes.BOX_ITEM_PROTECTION)) {
+            itemProtectionBox = new ItemProtectionBox(reader, box);
+        } else if (box.type.equals(HeifBoxTypes.BOX_PRIMARY_ITEM)) {
+            primaryItemBox = new PrimaryItemBox(reader, box);
+        } else if (box.type.equals(HeifBoxTypes.BOX_ITEM_INFO)) {
+            itemInfoBox = new ItemInfoBox(reader, box);
+            itemInfoBox.addMetadata(directory);
+        } else if (box.type.equals(HeifBoxTypes.BOX_ITEM_LOCATION)) {
+            itemLocationBox = new ItemLocationBox(reader, box);
+        } else if (box.type.equals(HeifBoxTypes.BOX_IMAGE_SPATIAL_EXTENTS)) {
+            ImageSpatialExtentsProperty imageSpatialExtentsProperty = new ImageSpatialExtentsProperty(reader, box);
+            imageSpatialExtentsProperty.addMetadata(directory);
+        } else if (box.type.equals(HeifBoxTypes.BOX_AUXILIARY_TYPE_PROPERTY)) {
+            AuxiliaryTypeProperty auxiliaryTypeProperty = new AuxiliaryTypeProperty(reader, box);
+        } else if (box.type.equals(HeifBoxTypes.BOX_IMAGE_ROTATION)) {
+            ImageRotationBox imageRotationBox = new ImageRotationBox(reader, box);
+            imageRotationBox.addMetadata(directory);
+        } else if (box.type.equals(HeifBoxTypes.BOX_COLOUR_INFO)) {
+            ColourInformationBox colourInformationBox = new ColourInformationBox(box);
+            colourInformationBox.addMetadata(directory);
+            byte[] data = colourInformationBox.GetICCProfileData(reader, box, metadata);            
+            metadata.heifICCBytes.add(data);
+        } else if (box.type.equals(HeifBoxTypes.BOX_PIXEL_INFORMATION)) {
+            PixelInformationBox pixelInformationBox = new PixelInformationBox(reader, box);
+            pixelInformationBox.addMetadata(directory);
+        }
+        
         return this;
     }
 
@@ -136,6 +178,32 @@ public class HeifPictureHandler extends HeifHandler<HeifDirectory>
         }
     }
 
+    /**
+     * Reads Exif bytes from the given reader instance and fills the metadata byte array 
+     * @param box represents the current box instance.
+     * @param handler the handler class instance.
+     */
+    @Override
+    protected void processContainerToReadBytes(@NotNull Box box, @NotNull SequentialReader reader) throws IOException
+    {
+        if (box.type.equals(HeifContainerTypes.BOX_MEDIA_DATA) && itemInfoBox != null && itemLocationBox != null) {
+            // We've reached the media data box, this contains all the items referred to by the info/location boxes
+
+            // Extents should already be sorted, this way we know we can traverse the one direction stream correctly
+            for (ItemLocationBox.Extent extent : itemLocationBox.getExtents()) {
+                ItemInfoBox.ItemInfoEntry infoEntry = itemInfoBox.getEntry(extent.getItemId());
+                long bytesToSkip = extent.getOffset() - reader.getPosition();
+                if (bytesToSkip > 0) {
+                    reader.skip(bytesToSkip);
+                }
+                if (shouldHandleItem(infoEntry)) {
+                    byte[] data = reader.getBytes((int) extent.getLength());
+                    metadata.heifExifBytes.add(data);
+                }
+            }
+        }
+    }
+    
     private boolean shouldHandleItem(ItemInfoBox.ItemInfoEntry infoEntry) {
         return itemsCanProcess.contains(infoEntry.getItemType());
     }

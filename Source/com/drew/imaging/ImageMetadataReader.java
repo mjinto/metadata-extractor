@@ -127,6 +127,25 @@ public class ImageMetadataReader
 
         return metadata;
     }
+    
+    /**
+     * Reads Exif and ICC profile bytes from an {@link InputStream} of known length and file type.
+     * @param inputStream a stream from which the file data may be read.  The stream must be positioned at the
+     *                    beginning of the file's data.
+     * @param streamLength the length of the stream, if known, otherwise -1.
+     * @return byte array of Exif and ICC profile data.     
+     */
+    @NotNull
+    public static byte[] readBytes(@NotNull final InputStream inputStream, final long streamLength) throws ImageProcessingException, IOException
+    {
+        BufferedInputStream bufferedInputStream = inputStream instanceof BufferedInputStream
+            ? (BufferedInputStream)inputStream
+            : new BufferedInputStream(inputStream);
+
+        FileType fileType = FileTypeDetector.detectFileType(bufferedInputStream);        
+        byte[] data = readBytes(bufferedInputStream, streamLength, fileType);
+        return data;       
+    }
 
     /**
      * Reads metadata from an {@link InputStream} of known length and file type.
@@ -187,6 +206,25 @@ public class ImageMetadataReader
                 return new Metadata();
         }
     }
+    
+    /**
+     * Reads Exif and ICC profile bytes from an {@link InputStream} of known length and file type.
+     * @param inputStream a stream from which the file data may be read.  The stream must be positioned at the
+     *                    beginning of the file's data.
+     * @param streamLength the length of the stream, if known, otherwise -1.
+     * @param fileType the file type of the data stream.
+     * @return byte array of Exif and ICC profile data.     
+     */
+    @NotNull
+    public static byte[] readBytes(@NotNull final InputStream inputStream, final long streamLength, final FileType fileType) throws IOException, ImageProcessingException
+    {
+        switch (fileType) {            
+            case Heif:
+            	return HeifMetadataReader.readBytes(inputStream);                
+            default:
+                return null;
+        }
+    }
 
     /**
      * Reads {@link Metadata} from a {@link File} object.
@@ -207,6 +245,37 @@ public class ImageMetadataReader
         }
         new FileSystemMetadataReader().read(file, metadata);
         return metadata;
+    }
+    
+    /**
+     * Reads Exif and ICC profile bytes from the given image at the given path.
+     *
+     * @param filePath the path at which the image is available.     
+     * @return byte array of Exif and ICC profile data.     
+     */
+    @NotNull
+    public static byte[] readExifAndICCBytes(@NotNull final String filePath) throws ImageProcessingException, IOException
+    { 
+    	File file = new File(filePath);
+        InputStream inputStream = null;
+        byte[] data=null;
+        
+        try {
+             inputStream = new FileInputStream(file);  
+             data = readBytes(inputStream, file.length());
+        } 
+        catch(Exception ex)
+        {
+        	System.out.println(ex);
+        }
+        finally {
+        	if(inputStream != null)
+        	{
+               inputStream.close();
+        	}
+        }
+        
+        return data;
     }
 
     private ImageMetadataReader() throws Exception
