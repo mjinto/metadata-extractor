@@ -121,6 +121,8 @@
                 <configuration>
                     <source>1.6</source>
                     <target>1.6</target>
+                    <debug>true</debug>
+        			<debuglevel>lines,vars,source</debuglevel>
                 </configuration>
             </plugin>
             <plugin>
@@ -137,16 +139,16 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>3.1.2</version>
-                <configuration>
+                <configuration>                
                     <archive>
                         <manifest>
                             <mainClass>com.drew.imaging.ImageMetadataReader</mainClass>
-                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>                            
                         </manifest>
                         <manifestEntries>
                             <Implementation-Title>metadata-extractor</Implementation-Title>
                             <Implementation-Vendor>Drew Noakes</Implementation-Vendor>
-                            <Implementation-Version>${project.version}</Implementation-Version>
+                            <Implementation-Version>${project.version}</Implementation-Version>                            
                         </manifestEntries>
                     </archive>
                 </configuration>
@@ -203,6 +205,7 @@
                     <autoReleaseAfterClose>false</autoReleaseAfterClose>
                 </configuration>
             </plugin>
+               
         </plugins>
     </build>
 
