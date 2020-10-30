@@ -1,6 +1,8 @@
-package com.drew.imaging;
+package com.drew.imaging.heif;
 
 import org.junit.Test;
+
+import com.drew.imaging.ImageMetadataReader;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -12,7 +14,6 @@ import java.io.FileOutputStream;
 import java.nio.file.Files;
 
 public class MetadataExtractorTest {
-	
 	/**
      * Validates EXIF , ICC Profile data bytes of a HEIF image.              
      */
@@ -192,5 +193,4 @@ public class MetadataExtractorTest {
 		
 		return bytes;
 	}
-	
 }
