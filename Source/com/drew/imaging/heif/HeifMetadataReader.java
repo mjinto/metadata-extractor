@@ -23,9 +23,7 @@ package com.drew.imaging.heif;
 import com.drew.lang.annotations.NotNull;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.heif.HeifBoxHandler;
-
 import java.io.InputStream;
-import java.util.ArrayList;
 
 public class HeifMetadataReader
 {
