@@ -120,8 +120,10 @@ public class HeifPictureHandler extends HeifHandler<HeifDirectory>
     
     /**
      * Reads ICC profile bytes from the given reader instance and fills the metadata byte array 
+     * Sequential iteration is requried to get color information bytes and it cannot be skipped
+     * even though no data bytes are extracted from other boxes.
      * @param box represents the current box instance.
-     * @param handler the handler class instance.
+     * @param payload the bytes from which the metadata is be extracted.
      * return handler instance based on the given box type.
      */
     @Override
