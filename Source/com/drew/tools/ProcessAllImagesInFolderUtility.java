@@ -136,7 +136,9 @@ public class ProcessAllImagesInFolderUtility
                 // Read metadata
                 final Metadata metadata;
                 try {
-                    metadata = ImageMetadataReader.readMetadata(file);
+                    metadata = ImageMetadataReader.readMetadata(file);                   
+                    HashMap<byte[], Boolean> data = ImageMetadataReader.readExifAndICCBytes("C:\\Users\\1150\\Desktop\\Sample Images\\test_image.HEIC");                   
+                    
                 } catch (Throwable t) {
                     handler.onExtractionError(file, t, log);
                     continue;

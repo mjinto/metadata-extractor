@@ -52,6 +52,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -133,18 +134,17 @@ public class ImageMetadataReader
      * @param inputStream a stream from which the file data may be read.  The stream must be positioned at the
      *                    beginning of the file's data.
      * @param streamLength the length of the stream, if known, otherwise -1.
-     * @return byte array of Exif and ICC profile data.     
+     * @return Map with byte array of Exif as key and display p3 status as value.     
      */
     @NotNull
-    public static byte[] readBytes(@NotNull final InputStream inputStream, final long streamLength) throws ImageProcessingException, IOException
+    public static HashMap<byte[], Boolean> readBytes(@NotNull final InputStream inputStream, final long streamLength) throws ImageProcessingException, IOException
     {
         BufferedInputStream bufferedInputStream = inputStream instanceof BufferedInputStream
             ? (BufferedInputStream)inputStream
             : new BufferedInputStream(inputStream);
 
         FileType fileType = FileTypeDetector.detectFileType(bufferedInputStream);        
-        byte[] data = readBytes(bufferedInputStream, streamLength, fileType);
-        return data;       
+        return readBytes(bufferedInputStream, streamLength, fileType);               
     }
 
     /**
@@ -213,14 +213,14 @@ public class ImageMetadataReader
      *                    beginning of the file's data.
      * @param streamLength the length of the stream, if known, otherwise -1.
      * @param fileType the file type of the data stream.
-     * @return byte array of Exif and ICC profile data.     
+     * @return Map with byte array of Exif as key and display p3 status as value.     
      */
     @NotNull
-    public static byte[] readBytes(@NotNull final InputStream inputStream, final long streamLength, final FileType fileType) throws IOException, ImageProcessingException
+    public static HashMap<byte[], Boolean> readBytes(@NotNull final InputStream inputStream, final long streamLength, final FileType fileType) throws IOException, ImageProcessingException
     {
         switch (fileType) {            
             case Heif:
-            	return HeifMetadataReader.readBytes(inputStream);                
+            	return HeifMetadataReader.getExifAndDisplayP3Info(inputStream);                
             default:
                 return null;
         }
@@ -251,14 +251,14 @@ public class ImageMetadataReader
      * Reads Exif and ICC profile bytes from the given image at the given path.
      *
      * @param filePath the path at which the image is available.     
-     * @return byte array of Exif and ICC profile data.     
+     * @return Map with byte array of Exif as key and display p3 status as value.     
      */
     @NotNull
-    public static byte[] readExifAndICCBytes(@NotNull final String filePath) throws ImageProcessingException, IOException
+    public static HashMap<byte[], Boolean> readExifAndICCBytes(@NotNull final String filePath) throws ImageProcessingException, IOException
     { 
     	File file = new File(filePath);
         InputStream inputStream = null;
-        byte[] data=null;
+        HashMap<byte[], Boolean> data=null;
         
         try {
              inputStream = new FileInputStream(file);  
@@ -298,6 +298,22 @@ public class ImageMetadataReader
      */
     public static void main(@NotNull String[] args)
     {
+ 
+        try{            
+            HashMap<byte[], Boolean> data = ImageMetadataReader.readExifAndICCBytes("C:\\Users\\1150\\Desktop\\Sample Images\\test_image.HEIC");    
+            Map.Entry<byte[], Boolean> entry = data.entrySet().iterator().next();
+            byte[] key = entry.getKey();
+            Boolean value = entry.getValue();      
+
+            System.out.println(key.length);
+            System.out.println(value);
+
+        }
+        catch(Exception ex)
+        {
+            System.out.println(ex);
+        }
+
         Collection<String> argList = new ArrayList<String>(Arrays.asList(args));
         boolean markdownFormat = argList.remove("-markdown");
         boolean showHex = argList.remove("-hex");

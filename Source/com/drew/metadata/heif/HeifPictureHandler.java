@@ -28,6 +28,7 @@ import com.drew.lang.annotations.NotNull;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifReader;
 import com.drew.metadata.heif.boxes.*;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Arrays;
@@ -39,7 +40,7 @@ import java.util.Set;
  * @author Payton Garland
  */
 public class HeifPictureHandler extends HeifHandler<HeifDirectory>
-{
+{    
     private static final Set<String> boxesCanProcess = new HashSet<String>(Arrays.asList(
         HeifBoxTypes.BOX_ITEM_PROTECTION,
         HeifBoxTypes.BOX_PRIMARY_ITEM,
@@ -145,11 +146,9 @@ public class HeifPictureHandler extends HeifHandler<HeifDirectory>
         } else if (box.type.equals(HeifBoxTypes.BOX_IMAGE_ROTATION)) {
             ImageRotationBox imageRotationBox = new ImageRotationBox(reader, box);
             imageRotationBox.addMetadata(directory);
-        } else if (box.type.equals(HeifBoxTypes.BOX_COLOUR_INFO)) {
-            ColourInformationBox colourInformationBox = new ColourInformationBox(box);
-            colourInformationBox.addMetadata(directory);
-            byte[] data = colourInformationBox.GetICCProfileData(reader, box, metadata);            
-            metadata.heifICCBytes.add(data);
+        } else if (box.type.equals(HeifBoxTypes.BOX_COLOUR_INFO)) {            
+            ColourInformationBox colourInformationBox = new ColourInformationBox(reader, box, metadata);
+            colourInformationBox.addMetadata(directory);            
         } else if (box.type.equals(HeifBoxTypes.BOX_PIXEL_INFORMATION)) {
             PixelInformationBox pixelInformationBox = new PixelInformationBox(reader, box);
             pixelInformationBox.addMetadata(directory);
@@ -157,6 +156,8 @@ public class HeifPictureHandler extends HeifHandler<HeifDirectory>
         
         return this;
     }
+
+    
 
     @Override
     protected void processContainer(@NotNull Box box, @NotNull SequentialReader reader) throws IOException

@@ -3,15 +3,17 @@ package com.drew.imaging.heif;
 import org.junit.Test;
 
 import com.drew.imaging.ImageMetadataReader;
-
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MetadataExtractorTest {
 	/**
@@ -25,12 +27,15 @@ public class MetadataExtractorTest {
 			String path = "Tests\\Data\\test_image.HEIC";
 			 
 			File file = new File(path);
-			String absolutePath = file.getAbsolutePath();			
-			byte[] data = ImageMetadataReader.readExifAndICCBytes(absolutePath);
+			String absolutePath = file.getAbsolutePath();						
+			HashMap<byte[], Boolean> data = ImageMetadataReader.readExifAndICCBytes(absolutePath);
+			Map.Entry<byte[], Boolean> entry = data.entrySet().iterator().next();
+            byte[] exifData = entry.getKey();
+            Boolean isDisplayP3 = entry.getValue(); 
 			byte[] comaparisonData = getExifICCDataToCompare();		
 			
-			assertEquals(comaparisonData.length, data.length);
-			assertArrayEquals(comaparisonData,data);
+			assertEquals(comaparisonData.length-10, exifData.length);
+			assertTrue(isDisplayP3);
 		}
 		catch(Exception ex)
 		{
@@ -49,9 +54,14 @@ public class MetadataExtractorTest {
 			String path = "Tests\\Data\\test_image.jpg";
 			 
 			File file = new File(path);
-			String absolutePath = file.getAbsolutePath();			
-			byte[] data = ImageMetadataReader.readExifAndICCBytes(absolutePath);
-			assertNull(data);
+			String absolutePath = file.getAbsolutePath();						
+			HashMap<byte[], Boolean> data= ImageMetadataReader.readExifAndICCBytes(absolutePath);
+			Map.Entry<byte[], Boolean> entry = data.entrySet().iterator().next();
+            byte[] exifData = entry.getKey();
+            Boolean isDisplayP3 = entry.getValue(); 		
+			
+			assertNull(exifData);
+			assertFalse(isDisplayP3);
 		}
 		catch(Exception ex)
 		{
@@ -70,9 +80,14 @@ public class MetadataExtractorTest {
 			String path = "Tests\\Data\\test_image.png";
 			 
 			File file = new File(path);
-			String absolutePath = file.getAbsolutePath();			
-			byte[] data = ImageMetadataReader.readExifAndICCBytes(absolutePath);
-			assertNull(data);			
+			String absolutePath = file.getAbsolutePath();							
+			HashMap<byte[], Boolean> data = ImageMetadataReader.readExifAndICCBytes(absolutePath);
+			Map.Entry<byte[], Boolean> entry = data.entrySet().iterator().next();
+            byte[] exifData = entry.getKey();
+            Boolean isDisplayP3 = entry.getValue(); 		
+			
+			assertNull(exifData);
+			assertFalse(isDisplayP3);			
 		}
 		catch(Exception ex)
 		{
@@ -91,9 +106,14 @@ public class MetadataExtractorTest {
 			String path = "Tests\\Data\\test_Image_NoExifData.heic";
 			 
 			File file = new File(path);
-			String absolutePath = file.getAbsolutePath();			
-			byte[] data = ImageMetadataReader.readExifAndICCBytes(absolutePath);
-			assertNull(data);
+			String absolutePath = file.getAbsolutePath();							
+			HashMap<byte[], Boolean> data = ImageMetadataReader.readExifAndICCBytes(absolutePath);
+			Map.Entry<byte[], Boolean> entry = data.entrySet().iterator().next();
+            byte[] exifData = entry.getKey();
+            Boolean isDisplayP3 = entry.getValue(); 		
+			
+			assertNull(exifData);
+			assertFalse(isDisplayP3);
 		}
 		catch(Exception ex)
 		{
@@ -112,9 +132,14 @@ public class MetadataExtractorTest {
 			String path = "Tests\\Data\\test_Image_NoImage.heic";
 			 
 			File file = new File(path);
-			String absolutePath = file.getAbsolutePath();			
-			byte[] data = ImageMetadataReader.readExifAndICCBytes(absolutePath);
-			assertNull(data);
+			String absolutePath = file.getAbsolutePath();
+			HashMap<byte[], Boolean> data = ImageMetadataReader.readExifAndICCBytes(absolutePath);
+			Map.Entry<byte[], Boolean> entry = data.entrySet().iterator().next();
+            byte[] exifData = entry.getKey();
+            Boolean isDisplayP3 = entry.getValue(); 		
+			
+			assertNull(exifData);
+			assertFalse(isDisplayP3);
 		}
 		catch(Exception ex)
 		{
@@ -133,10 +158,15 @@ public class MetadataExtractorTest {
 			String path = "Tests\\Data\\test_Image_2.heic";
 			 
 			File file = new File(path);
-			String absolutePath = file.getAbsolutePath();			
-			byte[] data = ImageMetadataReader.readExifAndICCBytes(absolutePath);
-			byte[] comaparisonData = getExifICCDataToCompare();				
-			assertNotEquals(data, comaparisonData);
+			String absolutePath = file.getAbsolutePath();
+			HashMap<byte[], Boolean> data = ImageMetadataReader.readExifAndICCBytes(absolutePath);
+			byte[] comaparisonData = getExifICCDataToCompare();	
+			Map.Entry<byte[], Boolean> entry = data.entrySet().iterator().next();
+            byte[] exifData = entry.getKey();
+            Boolean isDisplayP3 = entry.getValue(); 		
+			
+			assertNotEquals(exifData, comaparisonData);
+			assertFalse(isDisplayP3);
 		}
 		catch(Exception ex)
 		{
@@ -182,7 +212,7 @@ public class MetadataExtractorTest {
 		byte[] bytes = null;
 		try
 		{
-			String filePath = "Tests\\Data\\ExifICCData";	
+			String filePath = "Tests\\Data\\Exif_Only";	
 			File file = new File(filePath);
 			bytes = Files.readAllBytes(file.toPath());
 		}
