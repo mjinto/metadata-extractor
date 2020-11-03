@@ -40,6 +40,7 @@ public final class Metadata
      */
     @NotNull
     private final List<Directory> _directories = new ArrayList<Directory>();
+    public ArrayList<byte[]> heifExifBytes= new ArrayList<byte[]>();
 
     /**
      * Returns an iterable set of the {@link Directory} instances contained in this metadata collection.

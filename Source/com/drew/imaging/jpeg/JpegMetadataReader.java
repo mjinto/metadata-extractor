@@ -117,7 +117,9 @@ public class JpegMetadataReader
         Set<JpegSegmentType> segmentTypes = new HashSet<JpegSegmentType>();
         for (JpegSegmentMetadataReader reader : readers) {
             for (JpegSegmentType type : reader.getSegmentTypes()) {
-                segmentTypes.add(type);
+            	if(type.name() == "APP1" || type.name() == "APP2" ) {
+                    segmentTypes.add(type);
+            	}
             }
         }
 

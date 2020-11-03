@@ -19,6 +19,11 @@ public class ColourInformationBox extends Box
     int matrixCoefficients;
     int fullRangeFlag;
 
+    public ColourInformationBox(Box box) throws IOException
+    {
+        super(box);        
+    }
+    
     public ColourInformationBox(SequentialReader reader, Box box, Metadata metadata) throws IOException
     {
         super(box);
@@ -37,6 +42,28 @@ public class ColourInformationBox extends Box
             byte[] buffer = reader.getBytes((int)(size - 12));
             new IccReader().extract(new ByteArrayReader(buffer), metadata);
         }
+    }
+    
+    
+    public byte[] GetICCProfileData(SequentialReader reader, Box box, Metadata metadata) throws IOException
+    {	
+    	byte[] buffer = null;
+        colourType = reader.getString(4);
+        if (colourType.equals("nclx")) {
+            colourPrimaries = reader.getUInt16();
+            transferCharacteristics = reader.getUInt16();
+            matrixCoefficients = reader.getUInt16();
+            // Last 7 bits are reserved
+            fullRangeFlag = (reader.getUInt8() & 0x80) >> 7;
+        } else if (colourType.equals("rICC")) {
+            buffer = reader.getBytes((int)(size - 12));
+            new IccReader().extract(new ByteArrayReader(buffer), metadata);
+        } else if (colourType.equals("prof")) {
+            buffer = reader.getBytes((int)(size - 12));
+            new IccReader().extract(new ByteArrayReader(buffer), metadata);
+        }
+        
+        return buffer;
     }
 
     public void addMetadata(HeifDirectory directory)
