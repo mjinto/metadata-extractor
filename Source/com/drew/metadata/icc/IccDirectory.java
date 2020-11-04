@@ -55,6 +55,7 @@ public class IccDirectory extends Directory
     public static final int TAG_RED_COLUMN_MATRIX = 1918392666;
     public static final int TAG_GREEN_COLUMN_MATRIX = 1733843290;
     public static final int TAG_BLUE_COLUMN_MATRIX = 1649957210;
+    public static final int TAG_PROFILE_DESCRIPTION = 1684370275;
 
     // These tag values
 
