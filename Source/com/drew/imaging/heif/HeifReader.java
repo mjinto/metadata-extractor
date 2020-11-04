@@ -151,9 +151,7 @@ public class HeifReader {
                     break;
                 }
             }
-        } catch (IOException ex) {
-            // throw new ImageProcessingException("Failed to read EXIF data bytes. " +
-            // ex.getMessage());
+        } catch (IOException ex) {            
         }
     }
 
