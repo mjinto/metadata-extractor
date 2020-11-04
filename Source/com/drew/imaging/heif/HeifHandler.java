@@ -19,10 +19,7 @@
  *    https://github.com/drewnoakes/metadata-extractor
  */
 package com.drew.imaging.heif;
-
 import java.io.IOException;
-import java.util.ArrayList;
-
 import com.drew.lang.SequentialReader;
 import com.drew.lang.annotations.NotNull;
 import com.drew.metadata.Metadata;
@@ -42,14 +39,10 @@ public abstract class HeifHandler<T extends HeifDirectory>
     }
 
     protected abstract T getDirectory();
-
     protected abstract boolean shouldAcceptBox(@NotNull Box box);
-
     protected abstract boolean shouldAcceptContainer(@NotNull Box box);
-
     protected abstract HeifHandler<?> processBox(@NotNull Box box, @NotNull byte[] payload) throws IOException;
     protected abstract HeifHandler<?> processBoxToReadBytes(@NotNull Box box, @NotNull byte[] payload) throws IOException;
-
     /**
      * There is potential for a box to both contain other boxes and contain information, so this method will
      * handle those occurrences.

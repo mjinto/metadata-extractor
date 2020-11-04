@@ -19,7 +19,6 @@
  *    https://github.com/drewnoakes/metadata-extractor
  */
 package com.drew.imaging;
-
 import com.drew.imaging.avi.AviMetadataReader;
 import com.drew.imaging.bmp.BmpMetadataReader;
 import com.drew.imaging.eps.EpsMetadataReader;
@@ -47,12 +46,10 @@ import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.file.FileSystemMetadataReader;
 import com.drew.metadata.file.FileTypeDirectory;
 import com.drew.metadata.xmp.XmpDirectory;
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -127,25 +124,7 @@ public class ImageMetadataReader
         metadata.addDirectory(new FileTypeDirectory(fileType));
 
         return metadata;
-    }
-    
-    /**
-     * Reads Exif and ICC profile bytes from an {@link InputStream} of known length and file type.
-     * @param inputStream a stream from which the file data may be read.  The stream must be positioned at the
-     *                    beginning of the file's data.
-     * @param streamLength the length of the stream, if known, otherwise -1.
-     * @return Map with byte array of Exif as key and display p3 status as value.     
-     */
-    @NotNull
-    public static HashMap<byte[], Boolean> readBytes(@NotNull final InputStream inputStream, final long streamLength) throws ImageProcessingException, IOException
-    {
-        BufferedInputStream bufferedInputStream = inputStream instanceof BufferedInputStream
-            ? (BufferedInputStream)inputStream
-            : new BufferedInputStream(inputStream);
-
-        FileType fileType = FileTypeDetector.detectFileType(bufferedInputStream);        
-        return readBytes(bufferedInputStream, streamLength, fileType);               
-    }
+    }   
 
     /**
      * Reads metadata from an {@link InputStream} of known length and file type.
@@ -206,25 +185,6 @@ public class ImageMetadataReader
                 return new Metadata();
         }
     }
-    
-    /**
-     * Reads Exif and ICC profile bytes from an {@link InputStream} of known length and file type.
-     * @param inputStream a stream from which the file data may be read.  The stream must be positioned at the
-     *                    beginning of the file's data.
-     * @param streamLength the length of the stream, if known, otherwise -1.
-     * @param fileType the file type of the data stream.
-     * @return Map with byte array of Exif as key and display p3 status as value.     
-     */
-    @NotNull
-    public static HashMap<byte[], Boolean> readBytes(@NotNull final InputStream inputStream, final long streamLength, final FileType fileType) throws IOException, ImageProcessingException
-    {
-        switch (fileType) {            
-            case Heif:
-            	return HeifMetadataReader.getExifAndDisplayP3Info(inputStream);                
-            default:
-                return null;
-        }
-    }
 
     /**
      * Reads {@link Metadata} from a {@link File} object.
@@ -245,38 +205,7 @@ public class ImageMetadataReader
         }
         new FileSystemMetadataReader().read(file, metadata);
         return metadata;
-    }
-    
-    /**
-     * Reads Exif and ICC profile bytes from the given image at the given path.
-     *
-     * @param filePath the path at which the image is available.     
-     * @return Map with byte array of Exif as key and display p3 status as value.     
-     */
-    @NotNull
-    public static HashMap<byte[], Boolean> readExifAndICCBytes(@NotNull final String filePath) throws ImageProcessingException, IOException
-    { 
-    	File file = new File(filePath);
-        InputStream inputStream = null;
-        HashMap<byte[], Boolean> data=null;
-        
-        try {
-             inputStream = new FileInputStream(file);  
-             data = readBytes(inputStream, file.length());
-        } 
-        catch(Exception ex)
-        {
-        	System.out.println(ex);
-        }
-        finally {
-        	if(inputStream != null)
-        	{
-               inputStream.close();
-        	}
-        }
-        
-        return data;
-    }
+    }       
 
     private ImageMetadataReader() throws Exception
     {
@@ -298,22 +227,6 @@ public class ImageMetadataReader
      */
     public static void main(@NotNull String[] args)
     {
- 
-        try{            
-            HashMap<byte[], Boolean> data = ImageMetadataReader.readExifAndICCBytes("C:\\Users\\1150\\Desktop\\Sample Images\\test_image.HEIC");    
-            Map.Entry<byte[], Boolean> entry = data.entrySet().iterator().next();
-            byte[] key = entry.getKey();
-            Boolean value = entry.getValue();      
-
-            System.out.println(key.length);
-            System.out.println(value);
-
-        }
-        catch(Exception ex)
-        {
-            System.out.println(ex);
-        }
-
         Collection<String> argList = new ArrayList<String>(Arrays.asList(args));
         boolean markdownFormat = argList.remove("-markdown");
         boolean showHex = argList.remove("-hex");

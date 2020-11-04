@@ -1,16 +1,15 @@
 package com.drew.imaging.heif;
-
 import org.junit.Test;
-
-import com.drew.imaging.ImageMetadataReader;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,7 +27,7 @@ public class MetadataExtractorTest {
 			 
 			File file = new File(path);
 			String absolutePath = file.getAbsolutePath();						
-			HashMap<byte[], Boolean> data = ImageMetadataReader.readExifAndICCBytes(absolutePath);
+			HashMap<byte[], Boolean> data = HeifMetadataReader.getExifAndDisplayP3Info(getInputStream(absolutePath));
 			Map.Entry<byte[], Boolean> entry = data.entrySet().iterator().next();
             byte[] exifData = entry.getKey();
             Boolean isDisplayP3 = entry.getValue(); 
@@ -55,7 +54,7 @@ public class MetadataExtractorTest {
 			 
 			File file = new File(path);
 			String absolutePath = file.getAbsolutePath();						
-			HashMap<byte[], Boolean> data= ImageMetadataReader.readExifAndICCBytes(absolutePath);
+			HashMap<byte[], Boolean> data = HeifMetadataReader.getExifAndDisplayP3Info(getInputStream(absolutePath));
 			Map.Entry<byte[], Boolean> entry = data.entrySet().iterator().next();
             byte[] exifData = entry.getKey();
             Boolean isDisplayP3 = entry.getValue(); 		
@@ -81,7 +80,7 @@ public class MetadataExtractorTest {
 			 
 			File file = new File(path);
 			String absolutePath = file.getAbsolutePath();							
-			HashMap<byte[], Boolean> data = ImageMetadataReader.readExifAndICCBytes(absolutePath);
+			HashMap<byte[], Boolean> data = HeifMetadataReader.getExifAndDisplayP3Info(getInputStream(absolutePath));
 			Map.Entry<byte[], Boolean> entry = data.entrySet().iterator().next();
             byte[] exifData = entry.getKey();
             Boolean isDisplayP3 = entry.getValue(); 		
@@ -107,7 +106,7 @@ public class MetadataExtractorTest {
 			 
 			File file = new File(path);
 			String absolutePath = file.getAbsolutePath();							
-			HashMap<byte[], Boolean> data = ImageMetadataReader.readExifAndICCBytes(absolutePath);
+			HashMap<byte[], Boolean> data = HeifMetadataReader.getExifAndDisplayP3Info(getInputStream(absolutePath));
 			Map.Entry<byte[], Boolean> entry = data.entrySet().iterator().next();
             byte[] exifData = entry.getKey();
             Boolean isDisplayP3 = entry.getValue(); 		
@@ -133,7 +132,7 @@ public class MetadataExtractorTest {
 			 
 			File file = new File(path);
 			String absolutePath = file.getAbsolutePath();
-			HashMap<byte[], Boolean> data = ImageMetadataReader.readExifAndICCBytes(absolutePath);
+			HashMap<byte[], Boolean> data = HeifMetadataReader.getExifAndDisplayP3Info(getInputStream(absolutePath));
 			Map.Entry<byte[], Boolean> entry = data.entrySet().iterator().next();
             byte[] exifData = entry.getKey();
             Boolean isDisplayP3 = entry.getValue(); 		
@@ -159,7 +158,7 @@ public class MetadataExtractorTest {
 			 
 			File file = new File(path);
 			String absolutePath = file.getAbsolutePath();
-			HashMap<byte[], Boolean> data = ImageMetadataReader.readExifAndICCBytes(absolutePath);
+			HashMap<byte[], Boolean> data = HeifMetadataReader.getExifAndDisplayP3Info(getInputStream(absolutePath));
 			byte[] comaparisonData = getExifICCDataToCompare();	
 			Map.Entry<byte[], Boolean> entry = data.entrySet().iterator().next();
             byte[] exifData = entry.getKey();
@@ -207,7 +206,7 @@ public class MetadataExtractorTest {
      * Reads Exif and ICC profile bytes from the file which is kept at Data folder as a data reference.     
      * @return byte array of Exif and ICC profile data.     
      */
-	public static byte[] getExifICCDataToCompare()
+	private static byte[] getExifICCDataToCompare()
 	{
 		byte[] bytes = null;
 		try
@@ -222,5 +221,29 @@ public class MetadataExtractorTest {
 		}
 		
 		return bytes;
+	}
+
+	/**
+     * Returns the input stream of an image at the given path
+     *
+     * @param filePath represents the path at which the image is available
+     */
+	private BufferedInputStream getInputStream(String filePath)
+	{
+		BufferedInputStream bufferedInputStream = null;
+		try{
+		File file = new File(filePath);
+		InputStream inputStream = new FileInputStream(file); ;
+		
+		bufferedInputStream = inputStream instanceof BufferedInputStream
+            ? (BufferedInputStream)inputStream
+			: new BufferedInputStream(inputStream);
+		}
+		catch(Exception ex)
+		{
+			System.out.println(ex);
+		}
+
+		return bufferedInputStream;
 	}
 }
