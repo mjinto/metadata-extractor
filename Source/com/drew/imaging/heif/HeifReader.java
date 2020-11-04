@@ -151,7 +151,7 @@ public class HeifReader {
                     break;
                 }
             }
-        } catch (IOException ex) {            
+        } catch (IOException ex) {
         }
     }
 
@@ -164,24 +164,28 @@ public class HeifReader {
         Boolean isDisplayP3 = false;
         try {
             IccDirectory currentDirectory = metadata.getFirstDirectoryOfType(IccDirectory.class);
-            isDisplayP3 = currentDirectory.getDescription(IccDirectory.TAG_PROFILE_DESCRIPTION).trim().toLowerCase().equals("display p3")
-                    && currentDirectory.getString(IccDirectory.TAG_COLOR_SPACE).trim().toLowerCase().equals("rgb")
-                    && currentDirectory.getString(IccDirectory.TAG_PROFILE_CONNECTION_SPACE).trim().toLowerCase().equals("xyz")
-                    && currentDirectory.getString(IccDirectory.TAG_XYZ_VALUES).trim().toLowerCase().equals("0.9642 1 0.82491")
-                    && currentDirectory.getDescription(IccDirectory.TAG_MEDIA_WHITE_POINT).trim().toLowerCase().equals("(0.95045, 1, 1.08905)");
+            if (currentDirectory != null) {
+                isDisplayP3 = currentDirectory.getDescription(IccDirectory.TAG_PROFILE_DESCRIPTION).trim().toLowerCase().equals("display p3")
+                        && currentDirectory.getString(IccDirectory.TAG_COLOR_SPACE).trim().toLowerCase().equals("rgb")
+                        && currentDirectory.getString(IccDirectory.TAG_PROFILE_CONNECTION_SPACE).trim().toLowerCase().equals("xyz")
+                        && currentDirectory.getString(IccDirectory.TAG_XYZ_VALUES).trim().toLowerCase().equals("0.9642 1 0.82491")
+                        && currentDirectory.getDescription(IccDirectory.TAG_MEDIA_WHITE_POINT).trim().toLowerCase().equals("(0.95045, 1, 1.08905)");
 
-            if (isDisplayP3) {
-                String redColumnMatrix = currentDirectory.getDescription(IccDirectory.TAG_RED_COLUMN_MATRIX).trim();
-                if (validateMatrixColumnRange(IccDirectory.TAG_RED_COLUMN_MATRIX, redColumnMatrix)) {
-                    String greenColumnMatrix = currentDirectory.getDescription(IccDirectory.TAG_GREEN_COLUMN_MATRIX).trim();
-                    if (validateMatrixColumnRange(IccDirectory.TAG_GREEN_COLUMN_MATRIX, greenColumnMatrix)) {
-                        String blueColumnMatrix = currentDirectory.getDescription(IccDirectory.TAG_BLUE_COLUMN_MATRIX).trim();
-                        if (validateMatrixColumnRange(IccDirectory.TAG_BLUE_COLUMN_MATRIX, blueColumnMatrix)) {
-                            isDisplayP3 = true;
-                        }
-                    }
-                }
-            }           
+                /*
+                 * if (isDisplayP3) { String redColumnMatrix =
+                 * currentDirectory.getDescription(IccDirectory.TAG_RED_COLUMN_MATRIX).trim();
+                 * if (validateMatrixColumnRange(IccDirectory.TAG_RED_COLUMN_MATRIX,
+                 * redColumnMatrix)) { String greenColumnMatrix =
+                 * currentDirectory.getDescription(IccDirectory.TAG_GREEN_COLUMN_MATRIX).trim();
+                 * if (validateMatrixColumnRange(IccDirectory.TAG_GREEN_COLUMN_MATRIX,
+                 * greenColumnMatrix)) { String blueColumnMatrix =
+                 * currentDirectory.getDescription(IccDirectory.TAG_BLUE_COLUMN_MATRIX).trim();
+                 * if (validateMatrixColumnRange(IccDirectory.TAG_BLUE_COLUMN_MATRIX,
+                 * blueColumnMatrix)) { isDisplayP3 = true; } } } }
+                 */
+            } else {
+                throw new ImageProcessingException("ICC Profile is sRGB. DisplayP3 not found.");
+            }
         } catch (Exception ex) {
             throw new ImageProcessingException("Failed to process DisplayP3 data. " + ex.getMessage());
         }
