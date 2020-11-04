@@ -56,89 +56,92 @@ import java.util.Map;
  * Reads metadata from any supported file format.
  * <p>
  * This class a lightweight wrapper around other, specific metadata processors.
- * During extraction, the file type is determined from the first few bytes of the file.
- * Parsing is then delegated to one of:
+ * During extraction, the file type is determined from the first few bytes of
+ * the file. Parsing is then delegated to one of:
  *
  * <ul>
- *     <li>{@link AviMetadataReader} for AVI files</li>
- *     <li>{@link BmpMetadataReader} for BMP files</li>
- *     <li>{@link FileSystemMetadataReader} for metadata from the file system when a {@link File} is provided</li>
- *     <li>{@link GifMetadataReader} for GIF files</li>
- *     <li>{@link IcoMetadataReader} for ICO files</li>
- *     <li>{@link JpegMetadataReader} for JPEG files</li>
- *     <li>{@link Mp4MetadataReader} for MPEG-4 files</li>
- *     <li>{@link PcxMetadataReader} for PCX files</li>
- *     <li>{@link PngMetadataReader} for PNG files</li>
- *     <li>{@link PsdMetadataReader} for Photoshop files</li>
- *     <li>{@link QuickTimeMetadataReader} for QuickTime files</li>
- *     <li>{@link RafMetadataReader} for RAF files</li>
- *     <li>{@link TiffMetadataReader} for TIFF and (most) RAW files</li>
- *     <li>{@link WavMetadataReader} for WAV files</li>
- *     <li>{@link WebpMetadataReader} for WebP files</li>
+ * <li>{@link AviMetadataReader} for AVI files</li>
+ * <li>{@link BmpMetadataReader} for BMP files</li>
+ * <li>{@link FileSystemMetadataReader} for metadata from the file system when a
+ * {@link File} is provided</li>
+ * <li>{@link GifMetadataReader} for GIF files</li>
+ * <li>{@link IcoMetadataReader} for ICO files</li>
+ * <li>{@link JpegMetadataReader} for JPEG files</li>
+ * <li>{@link Mp4MetadataReader} for MPEG-4 files</li>
+ * <li>{@link PcxMetadataReader} for PCX files</li>
+ * <li>{@link PngMetadataReader} for PNG files</li>
+ * <li>{@link PsdMetadataReader} for Photoshop files</li>
+ * <li>{@link QuickTimeMetadataReader} for QuickTime files</li>
+ * <li>{@link RafMetadataReader} for RAF files</li>
+ * <li>{@link TiffMetadataReader} for TIFF and (most) RAW files</li>
+ * <li>{@link WavMetadataReader} for WAV files</li>
+ * <li>{@link WebpMetadataReader} for WebP files</li>
  * </ul>
  *
- * If you know the file type you're working with, you may use one of the above processors directly.
- * For most scenarios it is simpler, more convenient and more robust to use this class.
+ * If you know the file type you're working with, you may use one of the above
+ * processors directly. For most scenarios it is simpler, more convenient and
+ * more robust to use this class.
  * <p>
- * {@link FileTypeDetector} is used to determine the provided image's file type, and therefore
- * the appropriate metadata reader to use.
+ * {@link FileTypeDetector} is used to determine the provided image's file type,
+ * and therefore the appropriate metadata reader to use.
  *
  * @author Drew Noakes https://drewnoakes.com
  */
-public class ImageMetadataReader
-{
+public class ImageMetadataReader {
     /**
      * Reads metadata from an {@link InputStream}.
      *
-     * @param inputStream a stream from which the file data may be read.  The stream must be positioned at the
-     *                    beginning of the file's data.
-     * @return a populated {@link Metadata} object containing directories of tags with values and any processing errors.
-     * @throws ImageProcessingException if the file type is unknown, or for general processing errors.
+     * @param inputStream a stream from which the file data may be read. The stream
+     *                    must be positioned at the beginning of the file's data.
+     * @return a populated {@link Metadata} object containing directories of tags
+     *         with values and any processing errors.
+     * @throws ImageProcessingException if the file type is unknown, or for general
+     *                                  processing errors.
      */
     @NotNull
-    public static Metadata readMetadata(@NotNull final InputStream inputStream) throws ImageProcessingException, IOException
-    {
+    public static Metadata readMetadata(@NotNull final InputStream inputStream)
+            throws ImageProcessingException, IOException {
         return readMetadata(inputStream, -1);
     }
 
     /**
      * Reads metadata from an {@link InputStream} of known length.
      *
-     * @param inputStream a stream from which the file data may be read.  The stream must be positioned at the
-     *                    beginning of the file's data.
+     * @param inputStream  a stream from which the file data may be read. The stream
+     *                     must be positioned at the beginning of the file's data.
      * @param streamLength the length of the stream, if known, otherwise -1.
-     * @return a populated {@link Metadata} object containing directories of tags with values and any processing errors.
-     * @throws ImageProcessingException if the file type is unknown, or for general processing errors.
+     * @return a populated {@link Metadata} object containing directories of tags
+     *         with values and any processing errors.
+     * @throws ImageProcessingException if the file type is unknown, or for general
+     *                                  processing errors.
      */
     @NotNull
-    public static Metadata readMetadata(@NotNull final InputStream inputStream, final long streamLength) throws ImageProcessingException, IOException
-    {
+    public static Metadata readMetadata(@NotNull final InputStream inputStream, final long streamLength)
+            throws ImageProcessingException, IOException {
         BufferedInputStream bufferedInputStream = inputStream instanceof BufferedInputStream
-            ? (BufferedInputStream)inputStream
-            : new BufferedInputStream(inputStream);
-
+                ? (BufferedInputStream) inputStream
+                : new BufferedInputStream(inputStream);
         FileType fileType = FileTypeDetector.detectFileType(bufferedInputStream);
-
         Metadata metadata = readMetadata(bufferedInputStream, streamLength, fileType);
-
         metadata.addDirectory(new FileTypeDirectory(fileType));
-
         return metadata;
-    }   
+    }
 
     /**
      * Reads metadata from an {@link InputStream} of known length and file type.
      *
-     * @param inputStream a stream from which the file data may be read.  The stream must be positioned at the
-     *                    beginning of the file's data.
+     * @param inputStream  a stream from which the file data may be read. The stream
+     *                     must be positioned at the beginning of the file's data.
      * @param streamLength the length of the stream, if known, otherwise -1.
-     * @param fileType the file type of the data stream.
-     * @return a populated {@link Metadata} object containing directories of tags with values and any processing errors.
-     * @throws ImageProcessingException if the file type is unknown, or for general processing errors.
+     * @param fileType     the file type of the data stream.
+     * @return a populated {@link Metadata} object containing directories of tags
+     *         with values and any processing errors.
+     * @throws ImageProcessingException if the file type is unknown, or for general
+     *                                  processing errors.
      */
     @NotNull
-    public static Metadata readMetadata(@NotNull final InputStream inputStream, final long streamLength, final FileType fileType) throws IOException, ImageProcessingException
-    {
+    public static Metadata readMetadata(@NotNull final InputStream inputStream, final long streamLength,
+            final FileType fileType) throws IOException, ImageProcessingException {
         switch (fileType) {
             case Jpeg:
                 return JpegMetadataReader.readMetadata(inputStream);
@@ -148,7 +151,8 @@ public class ImageMetadataReader
             case Nef:
             case Orf:
             case Rw2:
-                return TiffMetadataReader.readMetadata(new RandomAccessStreamReader(inputStream, RandomAccessStreamReader.DEFAULT_CHUNK_LENGTH, streamLength));
+                return TiffMetadataReader.readMetadata(new RandomAccessStreamReader(inputStream,
+                        RandomAccessStreamReader.DEFAULT_CHUNK_LENGTH, streamLength));
             case Psd:
                 return PsdMetadataReader.readMetadata(inputStream);
             case Png:
@@ -190,12 +194,12 @@ public class ImageMetadataReader
      * Reads {@link Metadata} from a {@link File} object.
      *
      * @param file a file from which the image data may be read.
-     * @return a populated {@link Metadata} object containing directories of tags with values and any processing errors.
+     * @return a populated {@link Metadata} object containing directories of tags
+     *         with values and any processing errors.
      * @throws ImageProcessingException for general processing errors.
      */
     @NotNull
-    public static Metadata readMetadata(@NotNull final File file) throws ImageProcessingException, IOException
-    {
+    public static Metadata readMetadata(@NotNull final File file) throws ImageProcessingException, IOException {
         InputStream inputStream = new FileInputStream(file);
         Metadata metadata;
         try {
@@ -205,28 +209,28 @@ public class ImageMetadataReader
         }
         new FileSystemMetadataReader().read(file, metadata);
         return metadata;
-    }       
+    }
 
-    private ImageMetadataReader() throws Exception
-    {
+    private ImageMetadataReader() throws Exception {
         throw new Exception("Not intended for instantiation");
     }
 
     /**
-     * An application entry point.  Takes the name of one or more files as arguments and prints the contents of all
-     * metadata directories to <code>System.out</code>.
+     * An application entry point. Takes the name of one or more files as arguments
+     * and prints the contents of all metadata directories to
+     * <code>System.out</code>.
      * <p>
-     * If <code>-thumb</code> is passed, then any thumbnail data will be written to a file with name of the
-     * input file having <code>.thumb.jpg</code> appended.
+     * If <code>-thumb</code> is passed, then any thumbnail data will be written to
+     * a file with name of the input file having <code>.thumb.jpg</code> appended.
      * <p>
      * If <code>-markdown</code> is passed, then output will be in markdown format.
      * <p>
-     * If <code>-hex</code> is passed, then the ID of each tag will be displayed in hexadecimal.
+     * If <code>-hex</code> is passed, then the ID of each tag will be displayed in
+     * hexadecimal.
      *
      * @param args the command line arguments
      */
-    public static void main(@NotNull String[] args)
-    {
+    public static void main(@NotNull String[] args) {
         Collection<String> argList = new ArrayList<String>(Arrays.asList(args));
         boolean markdownFormat = argList.remove("-markdown");
         boolean showHex = argList.remove("-hex");
@@ -235,7 +239,9 @@ public class ImageMetadataReader
             String version = ImageMetadataReader.class.getPackage().getImplementationVersion();
             System.out.println("metadata-extractor version " + version);
             System.out.println();
-            System.out.println(String.format("Usage: java -jar metadata-extractor-%s.jar <filename> [<filename>] [-thumb] [-markdown] [-hex]", version == null ? "a.b.c" : version));
+            System.out.println(String.format(
+                    "Usage: java -jar metadata-extractor-%s.jar <filename> [<filename>] [-thumb] [-markdown] [-hex]",
+                    version == null ? "a.b.c" : version));
             System.exit(1);
         }
 
@@ -243,7 +249,7 @@ public class ImageMetadataReader
             long startTime = System.nanoTime();
             File file = new File(filePath);
 
-            if (!markdownFormat && argList.size()>1)
+            if (!markdownFormat && argList.size() > 1)
                 System.out.printf("%n***** PROCESSING: %s%n%n", filePath);
 
             Metadata metadata = null;
@@ -255,21 +261,27 @@ public class ImageMetadataReader
             }
             long took = System.nanoTime() - startTime;
             if (!markdownFormat)
-                System.out.printf("Processed %.3f MB file in %.2f ms%n%n", file.length() / (1024d * 1024), took / 1000000d);
+                System.out.printf("Processed %.3f MB file in %.2f ms%n%n", file.length() / (1024d * 1024),
+                        took / 1000000d);
 
             if (markdownFormat) {
                 String fileName = file.getName();
                 String urlName = StringUtil.urlEncode(filePath);
                 ExifIFD0Directory exifIFD0Directory = metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);
                 String make = exifIFD0Directory == null ? "" : exifIFD0Directory.getString(ExifIFD0Directory.TAG_MAKE);
-                String model = exifIFD0Directory == null ? "" : exifIFD0Directory.getString(ExifIFD0Directory.TAG_MODEL);
+                String model = exifIFD0Directory == null ? ""
+                        : exifIFD0Directory.getString(ExifIFD0Directory.TAG_MODEL);
                 System.out.println();
                 System.out.println("---");
                 System.out.println();
                 System.out.printf("# %s - %s%n", make, model);
                 System.out.println();
-                System.out.printf("<a href=\"https://raw.githubusercontent.com/drewnoakes/metadata-extractor-images/master/%s\">%n", urlName);
-                System.out.printf("<img src=\"https://raw.githubusercontent.com/drewnoakes/metadata-extractor-images/master/%s\" width=\"300\"/><br/>%n", urlName);
+                System.out.printf(
+                        "<a href=\"https://raw.githubusercontent.com/drewnoakes/metadata-extractor-images/master/%s\">%n",
+                        urlName);
+                System.out.printf(
+                        "<img src=\"https://raw.githubusercontent.com/drewnoakes/metadata-extractor-images/master/%s\" width=\"300\"/><br/>%n",
+                        urlName);
                 System.out.println(fileName);
                 System.out.println("</a>");
                 System.out.println();
@@ -290,15 +302,13 @@ public class ImageMetadataReader
                     }
 
                     if (markdownFormat) {
-                        System.out.printf("%s|0x%s|%s|%s%n",
-                                directoryName,
-                                Integer.toHexString(tag.getTagType()),
-                                tagName,
-                                description);
+                        System.out.printf("%s|0x%s|%s|%s%n", directoryName, Integer.toHexString(tag.getTagType()),
+                                tagName, description);
                     } else {
                         // simple formatting
                         if (showHex) {
-                            System.out.printf("[%s - %s] %s = %s%n", directoryName, tag.getTagTypeHex(), tagName, description);
+                            System.out.printf("[%s - %s] %s = %s%n", directoryName, tag.getTagTypeHex(), tagName,
+                                    description);
                         } else {
                             System.out.printf("[%s] %s = %s%n", directoryName, tagName, description);
                         }
@@ -306,7 +316,7 @@ public class ImageMetadataReader
                 }
 
                 if (directory instanceof XmpDirectory) {
-                    Map<String, String> xmpProperties = ((XmpDirectory)directory).getXmpProperties();
+                    Map<String, String> xmpProperties = ((XmpDirectory) directory).getXmpProperties();
                     for (Map.Entry<String, String> property : xmpProperties.entrySet()) {
                         String key = property.getKey();
                         String value = property.getValue();

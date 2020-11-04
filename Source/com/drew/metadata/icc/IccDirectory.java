@@ -51,6 +51,10 @@ public class IccDirectory extends Directory
     public static final int TAG_XYZ_VALUES = 68;
     public static final int TAG_PROFILE_CREATOR = 80;
     public static final int TAG_TAG_COUNT = 128;
+    public static final int TAG_MEDIA_WHITE_POINT = 2004119668;
+    public static final int TAG_RED_COLUMN_MATRIX = 1918392666;
+    public static final int TAG_GREEN_COLUMN_MATRIX = 1733843290;
+    public static final int TAG_BLUE_COLUMN_MATRIX = 1649957210;
 
     // These tag values
 
@@ -184,7 +188,7 @@ public class IccDirectory extends Directory
         _tagNameMap.put(TAG_TAG_mmod, "Make And Model");
         _tagNameMap.put(TAG_TAG_ndin, "Native Display Information");
         _tagNameMap.put(TAG_TAG_vcgt, "Video Card Gamma");
-        _tagNameMap.put(TAG_APPLE_MULTI_LANGUAGE_PROFILE_NAME, "Apple Multi-language Profile Name");
+        _tagNameMap.put(TAG_APPLE_MULTI_LANGUAGE_PROFILE_NAME, "Apple Multi-language Profile Name");        
     }
 
     public IccDirectory()

@@ -29,26 +29,25 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 
-public class HeifMetadataReader
-{
+public class HeifMetadataReader {
     @NotNull
-    public static Metadata readMetadata(@NotNull InputStream inputStream)
-    {
+    public static Metadata readMetadata(@NotNull InputStream inputStream) {
         Metadata metadata = new Metadata();
         new HeifReader().extract(inputStream, new HeifBoxHandler(metadata));
         return metadata;
     }
-    
+
     /**
      * Reads Exif bytes from the input stream and also checks the Display P3 status.
-     * @param inputStream a stream from which the file data may be read.  The stream must be positioned at the
-     *                    beginning of the file's data.    
-     * @return Map with byte array of Exif as key and display p3 status as value.     
+     * 
+     * @param inputStream a stream from which the file data may be read. The stream
+     *                    must be positioned at the beginning of the file's data.
+     * @return Map with byte array of Exif as key and display p3 status as value.
      */
     @NotNull
-    public static HashMap<byte[], Boolean> getExifAndDisplayP3Info(@NotNull InputStream inputStream) throws ImageProcessingException, IOException
-    {
+    public static HashMap<byte[], Boolean> getExifAndDisplayP3Info(@NotNull InputStream inputStream)
+            throws ImageProcessingException, IOException {
         Metadata metadata = new Metadata();
-        return new HeifReader().extractExifAndICCProfileStream(inputStream, new HeifBoxHandler(metadata));       
+        return new HeifReader().extractExifAndICCProfileStream(inputStream, new HeifBoxHandler(metadata));
     }
 }

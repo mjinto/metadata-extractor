@@ -169,7 +169,7 @@ public class IccDescriptor extends TagDescriptor<IccDirectory>
                 }
                 case ICC_TAG_TYPE_XYZ_ARRAY: {
                     StringBuilder res = new StringBuilder();
-                    DecimalFormat format = new DecimalFormat("0.####");
+                    DecimalFormat format = new DecimalFormat("0.#####");
                     int count = (bytes.length - 8) / 12;
                     for (int i = 0; i < count; i++) {
                         float x = reader.getS15Fixed16(8 + i * 12);

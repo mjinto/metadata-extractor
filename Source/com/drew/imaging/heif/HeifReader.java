@@ -22,7 +22,6 @@ package com.drew.imaging.heif;
 
 import com.drew.imaging.ImageProcessingException;
 import com.drew.lang.StreamReader;
-import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.heif.boxes.Box;
 import com.drew.metadata.icc.IccDirectory;
@@ -31,96 +30,76 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class HeifReader
-{
-    private Boolean tagFound;
+public class HeifReader {
 
-    public void extract(InputStream inputStream, HeifHandler<?> handler)
-    {
+    public void extract(InputStream inputStream, HeifHandler<?> handler) {
         StreamReader reader = new StreamReader(inputStream);
         reader.setMotorolaByteOrder(true);
-        processBoxes(reader, -1, handler);        
+        processBoxes(reader, -1, handler);
     }
-    
-    /**
-     * Reads Exif bytes from the input stream and also checks the Display P3 status. 
-     * @param inputStream a stream from which the file data may be read.  The stream must be positioned at the
-     *                    beginning of the file's data.
-     * @param handler the handler class instance .     
-     * @return Map with byte array of Exif as key and display p3 status as value.     
-     */
-    public HashMap<byte[], Boolean> extractExifAndICCProfileStream(InputStream inputStream, HeifHandler<?> handler) throws ImageProcessingException, IOException
-    {
-        HashMap<byte[], Boolean> result = new HashMap<byte[], Boolean>();       
 
-    	try
-    	{ 
-            result.put(getExifBytes(inputStream, handler), ValidateDisplayP3Data(handler.metadata));              	        
-    	}
-        finally
-        {
-            if(inputStream != null)
-            {
-                inputStream.close();
-            }
-        }      
-        
+    /**
+     * Reads Exif bytes from the input stream and also checks the Display P3 status.
+     * 
+     * @param inputStream a stream from which the file data may be read. The stream
+     *                    must be positioned at the beginning of the file's data.
+     * @param handler     the handler class instance .
+     * @return Map with byte array of Exif as key and display p3 status as value.
+     */
+    public HashMap<byte[], Boolean> extractExifAndICCProfileStream(InputStream inputStream, HeifHandler<?> handler)
+            throws ImageProcessingException, IOException {
+        HashMap<byte[], Boolean> result = new HashMap<byte[], Boolean>();
+
+        try {
+            StreamReader reader = new StreamReader(inputStream);
+            reader.setMotorolaByteOrder(true);
+            getExifProfileStream(reader, -1, handler);
+            result.put(getRequriedExifBytes(handler.metadata.heifExifBytes), ValidateDisplayP3Data(handler.metadata));
+        } finally {
+
+        }
+
         return result;
     }
 
     /**
-     * Reads Exif bytes from the input stream. 
-     * @param inputStream a stream from which the file data may be read.  The stream must be positioned at the
-     *                    beginning of the file's data.
-     * @param handler the handler class instance .     
-     * @return data bytes of Exif information.     
+     * Reads required EXIF bytes skipping the first 10 bytes from the full bytes.
+     * 
+     * @param exifData array list of exif data bytes extracted from the image.
+     * @return data bytes of Exif information.
      */
-    private byte[] getExifBytes(InputStream inputStream, HeifHandler<?> handler) throws ImageProcessingException
-    {
+    private byte[] getRequriedExifBytes(ArrayList<byte[]> exifData) throws ImageProcessingException {
         byte[] dataBytes = null;
-        try{
-            StreamReader reader = new StreamReader(inputStream);
-            reader.setMotorolaByteOrder(true);
-            getExifProfileStream(reader, -1, handler);  
-            ArrayList<byte[]> exifData = handler.metadata.heifExifBytes;
+        try {
             int arraySize = 0;
 
-            for (byte[] exifBytes : exifData) 
-            { 
+            for (byte[] exifBytes : exifData) {
                 arraySize += exifBytes.length;
-            }  
-                
-            if(arraySize >0)
-            {
-                int bytesCopied = 0;
-                if(exifData != null)
-                {
-                    arraySize = arraySize - (exifData.size() * 10);	        		
-                }
-                    
-                dataBytes = new byte[arraySize];
-                    
-                for (byte[] exifBytes : exifData) 
-                { 	
-                    System.arraycopy(exifBytes, 10, dataBytes, bytesCopied, exifBytes.length-10);
-                    bytesCopied += exifBytes.length - 10;	        		
-                }	        		        	
             }
-            else
-            {
+
+            if (arraySize > 0) {
+                int bytesCopied = 0;
+                if (exifData != null) {
+                    arraySize = arraySize - (exifData.size() * 10);
+                }
+
+                dataBytes = new byte[arraySize];
+
+                for (byte[] exifBytes : exifData) {
+                    System.arraycopy(exifBytes, 10, dataBytes, bytesCopied, exifBytes.length - 10);
+                    bytesCopied += exifBytes.length - 10;
+                }
+            } else {
                 return null;
             }
+        } catch (Exception ex) {
+            throw new ImageProcessingException("Failed to process the extracted EXIF data bytes. " + ex.getMessage());
         }
-        catch(Exception ex)
-        {
-            throw new ImageProcessingException("Failed to extract EXIF data bytes. "+ ex.getMessage());
-        }
-            
+
         return dataBytes;
     }
 
-    private void processBoxes(StreamReader reader, long atomEnd, HeifHandler<?> handler)
-    {
+    private void processBoxes(StreamReader reader, long atomEnd, HeifHandler<?> handler) {
         try {
             while (atomEnd == -1 || reader.getPosition() < atomEnd) {
 
@@ -133,7 +112,7 @@ public class HeifReader
                     handler.processContainer(box, reader);
                     processBoxes(reader, box.size + reader.getPosition() - 8, handler);
                 } else if (handler.shouldAcceptBox(box)) {
-                    handler = handler.processBox(box, reader.getBytes((int)box.size - 8));
+                    handler = handler.processBox(box, reader.getBytes((int) box.size - 8));
                 } else if (box.size > 1) {
                     reader.skip(box.size - 8);
                 } else if (box.size == -1) {
@@ -144,14 +123,15 @@ public class HeifReader
             // Currently, reader relies on IOException to end
         }
     }
-    
+
     /**
-     * Iterates through the given stream reader to fetch required bytes 
+     * Iterates through the given stream reader to fetch required bytes
+     * 
      * @param atomEnd represents the current index
-     * @param handler the handler class instance .    
+     * @param handler the handler class instance .
      */
     private void getExifProfileStream(StreamReader reader, long atomEnd, HeifHandler<?> handler)
-    {
+            throws ImageProcessingException {
         try {
             while (atomEnd == -1 || reader.getPosition() < atomEnd) {
 
@@ -164,65 +144,102 @@ public class HeifReader
                     handler.processContainerToReadBytes(box, reader);
                     getExifProfileStream(reader, box.size + reader.getPosition() - 8, handler);
                 } else if (handler.shouldAcceptBox(box)) {
-                    handler = handler.processBox(box, reader.getBytes((int)box.size - 8));
+                    handler = handler.processBox(box, reader.getBytes((int) box.size - 8));
                 } else if (box.size > 1) {
                     reader.skip(box.size - 8);
                 } else if (box.size == -1) {
                     break;
                 }
             }
-        } catch (IOException e) {
-            // Currently, reader relies on IOException to end
-        } 
+        } catch (IOException ex) {
+            // throw new ImageProcessingException("Failed to read EXIF data bytes. " +
+            // ex.getMessage());
+        }
     }
 
     /**
-     * Validates icc profile tags 
-     * @param metadata represents the current metadata instance.     
+     * Validates icc profile tags
+     * 
+     * @param metadata represents the current metadata instance.
      */
-    private Boolean ValidateDisplayP3Data(Metadata metadata) throws ImageProcessingException
-    {
-          Boolean isDisplayP3 = false; 
-          try{
-          IccDirectory currentDirectory = metadata.getFirstDirectoryOfType(IccDirectory.class);
-          if(currentDirectory != null)
-          {
-            isDisplayP3 = ValidateTagsAndValues(currentDirectory, "profile description","display p3") 
-                    && ValidateTagsAndValues(currentDirectory, "color space","rgb") 
-                    && ValidateTagsAndValues(currentDirectory, "profile connection space","xyz") 
-                    && ValidateTagsAndValues(currentDirectory, "xyz values","0.964 1 0.825")
-                    && ValidateTagsAndValues(currentDirectory, "media white point","(0.9505, 1, 1.0891)")
-                    && ValidateTagsAndValues(currentDirectory, "red colorant","(0.5151, 0.2412, 65536)")
-                    && ValidateTagsAndValues(currentDirectory, "green colorant","(0.292, 0.6922, 0.0419)")
-                    && ValidateTagsAndValues(currentDirectory, "blue colorant","(0.1571, 0.0666, 0.7841)");
-          }
-        }
-        catch(Exception ex)
-        {
-            throw new ImageProcessingException("Failed to process DisplayP3 data. "+ ex.getMessage());
+    private Boolean ValidateDisplayP3Data(Metadata metadata) throws ImageProcessingException {
+        Boolean isDisplayP3 = false;
+        try {
+            IccDirectory currentDirectory = metadata.getFirstDirectoryOfType(IccDirectory.class);
+
+            if (currentDirectory.getDescription(1684370275).trim().toLowerCase().equals("display p3")) {
+                if (currentDirectory.getString(IccDirectory.TAG_COLOR_SPACE).trim().toLowerCase().equals("rgb")) {
+                    if (currentDirectory.getString(IccDirectory.TAG_PROFILE_CONNECTION_SPACE).trim().toLowerCase()
+                            .equals("xyz")) {
+                        if (currentDirectory.getString(IccDirectory.TAG_XYZ_VALUES).trim().toLowerCase()
+                                .equals("0.9642 1 0.82491")) {
+                            if (currentDirectory.getDescription(IccDirectory.TAG_MEDIA_WHITE_POINT).trim().toLowerCase()
+                                    .equals("(0.95045, 1, 1.08905)")) {
+
+                                String redColumnMatrix = currentDirectory
+                                        .getDescription(IccDirectory.TAG_RED_COLUMN_MATRIX).trim();
+                                if (validateMatrixColumnRange(IccDirectory.TAG_RED_COLUMN_MATRIX, redColumnMatrix)) {
+
+                                    String greenColumnMatrix = currentDirectory
+                                            .getDescription(IccDirectory.TAG_GREEN_COLUMN_MATRIX).trim();
+                                    if (validateMatrixColumnRange(IccDirectory.TAG_GREEN_COLUMN_MATRIX,
+                                            greenColumnMatrix)) {
+
+                                        String blueColumnMatrix = currentDirectory
+                                                .getDescription(IccDirectory.TAG_BLUE_COLUMN_MATRIX).trim();
+                                        if (validateMatrixColumnRange(IccDirectory.TAG_BLUE_COLUMN_MATRIX,
+                                                blueColumnMatrix)) {
+                                            isDisplayP3 = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            throw new ImageProcessingException("Failed to process DisplayP3 data. " + ex.getMessage());
         }
 
         return isDisplayP3;
     }
 
-     /**
-     * Checks whether the given icc profile tag and description is available in the current directory 
-     * @param iccDirectory represents the current icc directory instance.
-     * @param tag the icc profile tag.
-     * @param value the icc profile description.
+    /**
+     * Validates colum matrix values of red, green and blue
+     * 
+     * @param metadata represents the current metadata instance.
+     * @return whether it is display p3 or not
      */
-    private Boolean ValidateTagsAndValues(Directory iccDirectory, String tag, String value)
-    {
-        tagFound = false;       
+    private boolean validateMatrixColumnRange(int tagType, String value) {
 
-        iccDirectory.getTags().forEach(currentTag-> { 
-            if(currentTag.getTagName().trim().toLowerCase().equals(tag) 
-            && currentTag.getDescription().trim().toLowerCase().equals(value))
-            {
-                tagFound = true;
+        boolean isValid = false;
+        String xyzValues = value.substring(value.indexOf('(') + 1, value.lastIndexOf(')'));
+        String[] values = xyzValues.split(", ");
+        float xVal = 0;
+        float yVal = 0;
+        float zVal = 0;
+
+        if (values.length == 3) {
+            xVal = Float.parseFloat(values[0]);
+            yVal = Float.parseFloat(values[1]);
+            zVal = Float.parseFloat(values[2]);
+
+            switch (tagType) {
+                case IccDirectory.TAG_RED_COLUMN_MATRIX:
+                    isValid = (0.50512 <= xVal && xVal <= 0.52512) && (0.2312 <= yVal && yVal <= 0.2512);
+                    break;
+                case IccDirectory.TAG_GREEN_COLUMN_MATRIX:
+                    isValid = (0.28198 <= xVal && xVal <= 0.30198) && (0.68225 <= yVal && yVal <= 0.70225)
+                            && (0.03189 <= zVal && zVal <= 0.05189);
+                    break;
+                case IccDirectory.TAG_BLUE_COLUMN_MATRIX:
+                    isValid = (0.1471 <= xVal && xVal <= 0.1671) && (0.05657 <= yVal && yVal <= 0.07657)
+                            && (0.77407 <= zVal && zVal <= 0.79407);
+                    break;
             }
-        });
+        }
 
-       return tagFound;
+        return isValid;
     }
 }

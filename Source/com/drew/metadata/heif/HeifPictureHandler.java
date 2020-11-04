@@ -39,55 +39,41 @@ import java.util.Set;
 /**
  * @author Payton Garland
  */
-public class HeifPictureHandler extends HeifHandler<HeifDirectory>
-{    
-    private static final Set<String> boxesCanProcess = new HashSet<String>(Arrays.asList(
-        HeifBoxTypes.BOX_ITEM_PROTECTION,
-        HeifBoxTypes.BOX_PRIMARY_ITEM,
-        HeifBoxTypes.BOX_ITEM_INFO,
-        HeifBoxTypes.BOX_ITEM_LOCATION,
-        HeifBoxTypes.BOX_IMAGE_SPATIAL_EXTENTS,
-        HeifBoxTypes.BOX_AUXILIARY_TYPE_PROPERTY,
-        HeifBoxTypes.BOX_IMAGE_ROTATION,
-        HeifBoxTypes.BOX_COLOUR_INFO,
-        HeifBoxTypes.BOX_PIXEL_INFORMATION
-    ));
+public class HeifPictureHandler extends HeifHandler<HeifDirectory> {
+    private static final Set<String> boxesCanProcess = new HashSet<String>(
+            Arrays.asList(HeifBoxTypes.BOX_ITEM_PROTECTION, HeifBoxTypes.BOX_PRIMARY_ITEM, HeifBoxTypes.BOX_ITEM_INFO,
+                    HeifBoxTypes.BOX_ITEM_LOCATION, HeifBoxTypes.BOX_IMAGE_SPATIAL_EXTENTS,
+                    HeifBoxTypes.BOX_AUXILIARY_TYPE_PROPERTY, HeifBoxTypes.BOX_IMAGE_ROTATION,
+                    HeifBoxTypes.BOX_COLOUR_INFO, HeifBoxTypes.BOX_PIXEL_INFORMATION));
 
-    private static final Set<String> itemsCanProcess = new HashSet<String>(Collections.singletonList(
-        HeifItemTypes.ITEM_EXIF
-    ));
+    private static final Set<String> itemsCanProcess = new HashSet<String>(
+            Collections.singletonList(HeifItemTypes.ITEM_EXIF));
 
-    private static final Set<String> containersCanProcess = new HashSet<String>(Arrays.asList(
-        HeifContainerTypes.BOX_IMAGE_PROPERTY,
-        HeifContainerTypes.BOX_ITEM_PROPERTY,
-        HeifContainerTypes.BOX_MEDIA_DATA
-    ));
+    private static final Set<String> containersCanProcess = new HashSet<String>(
+            Arrays.asList(HeifContainerTypes.BOX_IMAGE_PROPERTY, HeifContainerTypes.BOX_ITEM_PROPERTY,
+                    HeifContainerTypes.BOX_MEDIA_DATA));
 
     ItemProtectionBox itemProtectionBox;
     PrimaryItemBox primaryItemBox;
     ItemInfoBox itemInfoBox;
     ItemLocationBox itemLocationBox;
 
-    public HeifPictureHandler(Metadata metadata)
-    {
+    public HeifPictureHandler(Metadata metadata) {
         super(metadata);
     }
 
     @Override
-    protected boolean shouldAcceptBox(@NotNull Box box)
-    {
+    protected boolean shouldAcceptBox(@NotNull Box box) {
         return boxesCanProcess.contains(box.type);
     }
 
     @Override
-    protected boolean shouldAcceptContainer(@NotNull Box box)
-    {
+    protected boolean shouldAcceptContainer(@NotNull Box box) {
         return containersCanProcess.contains(box.type);
     }
 
     @Override
-    protected HeifHandler<?> processBox(@NotNull Box box, @NotNull byte[] payload) throws IOException
-    {
+    protected HeifHandler<?> processBox(@NotNull Box box, @NotNull byte[] payload) throws IOException {
         SequentialReader reader = new SequentialByteArrayReader(payload);
         if (box.type.equals(HeifBoxTypes.BOX_ITEM_PROTECTION)) {
             itemProtectionBox = new ItemProtectionBox(reader, box);
@@ -113,17 +99,18 @@ public class HeifPictureHandler extends HeifHandler<HeifDirectory>
             PixelInformationBox pixelInformationBox = new PixelInformationBox(reader, box);
             pixelInformationBox.addMetadata(directory);
         }
-        
+
         return this;
-    } 
+    }
 
     @Override
-    protected void processContainer(@NotNull Box box, @NotNull SequentialReader reader) throws IOException
-    {
+    protected void processContainer(@NotNull Box box, @NotNull SequentialReader reader) throws IOException {
         if (box.type.equals(HeifContainerTypes.BOX_MEDIA_DATA) && itemInfoBox != null && itemLocationBox != null) {
-            // We've reached the media data box, this contains all the items referred to by the info/location boxes
+            // We've reached the media data box, this contains all the items referred to by
+            // the info/location boxes
 
-            // Extents should already be sorted, this way we know we can traverse the one direction stream correctly
+            // Extents should already be sorted, this way we know we can traverse the one
+            // direction stream correctly
             for (ItemLocationBox.Extent extent : itemLocationBox.getExtents()) {
                 ItemInfoBox.ItemInfoEntry infoEntry = itemInfoBox.getEntry(extent.getItemId());
                 long bytesToSkip = extent.getOffset() - reader.getPosition();
@@ -138,17 +125,20 @@ public class HeifPictureHandler extends HeifHandler<HeifDirectory>
     }
 
     /**
-     * Reads Exif bytes from the given reader instance and fills the metadata byte array 
-     * @param box represents the current box instance.
+     * Reads Exif bytes from the given reader instance and fills the metadata byte
+     * array
+     * 
+     * @param box     represents the current box instance.
      * @param handler the handler class instance.
      */
     @Override
-    protected void processContainerToReadBytes(@NotNull Box box, @NotNull SequentialReader reader) throws IOException
-    {
+    protected void processContainerToReadBytes(@NotNull Box box, @NotNull SequentialReader reader) throws IOException {
         if (box.type.equals(HeifContainerTypes.BOX_MEDIA_DATA) && itemInfoBox != null && itemLocationBox != null) {
-            // We've reached the media data box, this contains all the items referred to by the info/location boxes
+            // We've reached the media data box, this contains all the items referred to by
+            // the info/location boxes
 
-            // Extents should already be sorted, this way we know we can traverse the one direction stream correctly
+            // Extents should already be sorted, this way we know we can traverse the one
+            // direction stream correctly
             for (ItemLocationBox.Extent extent : itemLocationBox.getExtents()) {
                 ItemInfoBox.ItemInfoEntry infoEntry = itemInfoBox.getEntry(extent.getItemId());
                 long bytesToSkip = extent.getOffset() - reader.getPosition();
@@ -162,29 +152,30 @@ public class HeifPictureHandler extends HeifHandler<HeifDirectory>
             }
         }
     }
-    
+
     private boolean shouldHandleItem(ItemInfoBox.ItemInfoEntry infoEntry) {
         return itemsCanProcess.contains(infoEntry.getItemType());
     }
 
-    private void handleItem(@NotNull ItemInfoBox.ItemInfoEntry entry,
-                            @NotNull SequentialByteArrayReader payloadReader) throws IOException {
+    private void handleItem(@NotNull ItemInfoBox.ItemInfoEntry entry, @NotNull SequentialByteArrayReader payloadReader)
+            throws IOException {
         if (entry.getItemType().equals(HeifItemTypes.ITEM_EXIF)) {
-            // ISO/IEC 23008-12:2017 Annex A: First 4 bytes will ALWAYS be an offset to the Tiff header in the payload
+            // ISO/IEC 23008-12:2017 Annex A: First 4 bytes will ALWAYS be an offset to the
+            // Tiff header in the payload
             long tiffHeaderOffset = payloadReader.getUInt32();
             if (tiffHeaderOffset > payloadReader.available()) {
                 // This Exif item is not laid out according to spec
                 return;
             }
             payloadReader.skip(tiffHeaderOffset);
-            ByteArrayInputStream tiffStream = new ByteArrayInputStream(payloadReader.getBytes(payloadReader.available()));
+            ByteArrayInputStream tiffStream = new ByteArrayInputStream(
+                    payloadReader.getBytes(payloadReader.available()));
             new ExifReader().extract(new RandomAccessStreamReader(tiffStream), metadata);
         }
     }
 
     @Override
-    protected HeifDirectory getDirectory()
-    {
+    protected HeifDirectory getDirectory() {
         return new HeifDirectory();
-    }
+    }    
 }

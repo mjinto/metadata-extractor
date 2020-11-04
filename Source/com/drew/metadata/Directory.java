@@ -44,7 +44,7 @@ import java.util.regex.Pattern;
 @java.lang.SuppressWarnings("WeakerAccess")
 public abstract class Directory
 {
-    private static final String _floatFormatPattern = "0.###";
+    private static final String _floatFormatPattern = "0.#####";
 
     /** Map of values hashed by type identifiers. */
     @NotNull
