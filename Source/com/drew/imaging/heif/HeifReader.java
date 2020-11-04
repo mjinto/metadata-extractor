@@ -20,12 +20,12 @@
  */
 package com.drew.imaging.heif;
 
+import com.drew.imaging.ImageProcessingException;
 import com.drew.lang.StreamReader;
 import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.heif.boxes.Box;
 import com.drew.metadata.icc.IccDirectory;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -43,60 +43,80 @@ public class HeifReader
     }
     
     /**
-     * Reads Exif and ICC profile bytes from the given stream and combines to a single byte array 
+     * Reads Exif bytes from the input stream and also checks the Display P3 status. 
      * @param inputStream a stream from which the file data may be read.  The stream must be positioned at the
      *                    beginning of the file's data.
      * @param handler the handler class instance .     
      * @return Map with byte array of Exif as key and display p3 status as value.     
      */
-    public HashMap<byte[], Boolean> readBytes(InputStream inputStream, HeifHandler<?> handler)
+    public HashMap<byte[], Boolean> extractExifAndICCProfileStream(InputStream inputStream, HeifHandler<?> handler) throws ImageProcessingException, IOException
     {
-        HashMap<byte[], Boolean> result = new HashMap<byte[], Boolean>();
-        byte[] dataBytes = null;
-        Boolean isDisplayP3 = false;
+        HashMap<byte[], Boolean> result = new HashMap<byte[], Boolean>();       
 
     	try
-    	{            
-	        StreamReader reader = new StreamReader(inputStream);
-	        reader.setMotorolaByteOrder(true);
-	        getExifAndICCProfileStream(reader, -1, handler);        
-	        ArrayList<byte[]> exifData = handler.metadata.heifExifBytes;  
-            isDisplayP3 = ValidateDisplayP3Data(handler.metadata);            
-            
-	        int arraySize = 0;
-	        for (byte[] exifBytes : exifData) 
-	        { 
-	        	arraySize += exifBytes.length;
-	        }  
-	        
-	        if(arraySize >0)
-	        {
-	        	int bytesCopied = 0;
-	        	if(exifData != null)
-	        	{
-	        		arraySize = arraySize - (exifData.size() * 10);	        		
-	        	}
-	        	
-	        	dataBytes = new byte[arraySize];
-	        	
-	        	for (byte[] exifBytes : exifData) 
-	            { 	
-	        		System.arraycopy(exifBytes, 10, dataBytes, bytesCopied, exifBytes.length-10);
-	        		bytesCopied += exifBytes.length - 10;	        		
-	            }	        		        	
-	        }
-	        else
-	        {
-	        	 return null;
-	        }
+    	{ 
+            result.put(getExifBytes(inputStream, handler), ValidateDisplayP3Data(handler.metadata));              	        
     	}
-    	catch(Exception ex)
-    	{
-    		System.out.println(ex);
-    	}
+        finally
+        {
+            if(inputStream != null)
+            {
+                inputStream.close();
+            }
+        }      
         
-        result.put(dataBytes, isDisplayP3);
         return result;
+    }
+
+    /**
+     * Reads Exif bytes from the input stream. 
+     * @param inputStream a stream from which the file data may be read.  The stream must be positioned at the
+     *                    beginning of the file's data.
+     * @param handler the handler class instance .     
+     * @return data bytes of Exif information.     
+     */
+    private byte[] getExifBytes(InputStream inputStream, HeifHandler<?> handler) throws ImageProcessingException
+    {
+        byte[] dataBytes = null;
+        try{
+            StreamReader reader = new StreamReader(inputStream);
+            reader.setMotorolaByteOrder(true);
+            getExifProfileStream(reader, -1, handler);  
+            ArrayList<byte[]> exifData = handler.metadata.heifExifBytes;
+            int arraySize = 0;
+
+            for (byte[] exifBytes : exifData) 
+            { 
+                arraySize += exifBytes.length;
+            }  
+                
+            if(arraySize >0)
+            {
+                int bytesCopied = 0;
+                if(exifData != null)
+                {
+                    arraySize = arraySize - (exifData.size() * 10);	        		
+                }
+                    
+                dataBytes = new byte[arraySize];
+                    
+                for (byte[] exifBytes : exifData) 
+                { 	
+                    System.arraycopy(exifBytes, 10, dataBytes, bytesCopied, exifBytes.length-10);
+                    bytesCopied += exifBytes.length - 10;	        		
+                }	        		        	
+            }
+            else
+            {
+                return null;
+            }
+        }
+        catch(Exception ex)
+        {
+            throw new ImageProcessingException("Failed to extract EXIF data bytes. "+ ex.getMessage());
+        }
+            
+        return dataBytes;
     }
 
     private void processBoxes(StreamReader reader, long atomEnd, HeifHandler<?> handler)
@@ -130,7 +150,7 @@ public class HeifReader
      * @param atomEnd represents the current index
      * @param handler the handler class instance .    
      */
-    private void getExifAndICCProfileStream(StreamReader reader, long atomEnd, HeifHandler<?> handler)
+    private void getExifProfileStream(StreamReader reader, long atomEnd, HeifHandler<?> handler)
     {
         try {
             while (atomEnd == -1 || reader.getPosition() < atomEnd) {
@@ -142,9 +162,9 @@ public class HeifReader
 
                 if (handler.shouldAcceptContainer(box)) {
                     handler.processContainerToReadBytes(box, reader);
-                    getExifAndICCProfileStream(reader, box.size + reader.getPosition() - 8, handler);
+                    getExifProfileStream(reader, box.size + reader.getPosition() - 8, handler);
                 } else if (handler.shouldAcceptBox(box)) {
-                    handler = handler.processBoxToReadBytes(box, reader.getBytes((int)box.size - 8));
+                    handler = handler.processBox(box, reader.getBytes((int)box.size - 8));
                 } else if (box.size > 1) {
                     reader.skip(box.size - 8);
                 } else if (box.size == -1) {
@@ -160,9 +180,10 @@ public class HeifReader
      * Validates icc profile tags 
      * @param metadata represents the current metadata instance.     
      */
-    private Boolean ValidateDisplayP3Data(Metadata metadata)
+    private Boolean ValidateDisplayP3Data(Metadata metadata) throws ImageProcessingException
     {
           Boolean isDisplayP3 = false; 
+          try{
           IccDirectory currentDirectory = metadata.getFirstDirectoryOfType(IccDirectory.class);
           if(currentDirectory != null)
           {
@@ -175,6 +196,11 @@ public class HeifReader
                     && ValidateTagsAndValues(currentDirectory, "green colorant","(0.292, 0.6922, 0.0419)")
                     && ValidateTagsAndValues(currentDirectory, "blue colorant","(0.1571, 0.0666, 0.7841)");
           }
+        }
+        catch(Exception ex)
+        {
+            throw new ImageProcessingException("Failed to process DisplayP3 data. "+ ex.getMessage());
+        }
 
         return isDisplayP3;
     }

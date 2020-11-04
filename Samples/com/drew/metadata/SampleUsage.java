@@ -56,8 +56,6 @@ public class SampleUsage
         //
         try {
             Metadata metadata = ImageMetadataReader.readMetadata(file);
-            byte[] data = ImageMetadataReader.readExifAndICCBytes(file);
-
             print(metadata, "Using ImageMetadataReader");
         } catch (ImageProcessingException e) {
             print(e);

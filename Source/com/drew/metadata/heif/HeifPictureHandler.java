@@ -115,49 +115,7 @@ public class HeifPictureHandler extends HeifHandler<HeifDirectory>
         }
         
         return this;
-    }
-    
-    /**
-     * Reads ICC profile bytes from the given reader instance and fills the metadata byte array 
-     * Sequential iteration is requried to get color information bytes and it cannot be skipped
-     * even though no data bytes from other boxes are filled to EXIF/ICC profile data array.
-     * @param box represents the current box instance.
-     * @param payload the bytes from which the metadata is be extracted.
-     * return handler instance based on the given box type.
-     */
-    @Override
-    protected HeifHandler<?> processBoxToReadBytes(@NotNull Box box, @NotNull byte[] payload) throws IOException
-    {
-        SequentialReader reader = new SequentialByteArrayReader(payload);
-        if (box.type.equals(HeifBoxTypes.BOX_ITEM_PROTECTION)) {
-            itemProtectionBox = new ItemProtectionBox(reader, box);
-        } else if (box.type.equals(HeifBoxTypes.BOX_PRIMARY_ITEM)) {
-            primaryItemBox = new PrimaryItemBox(reader, box);
-        } else if (box.type.equals(HeifBoxTypes.BOX_ITEM_INFO)) {
-            itemInfoBox = new ItemInfoBox(reader, box);
-            itemInfoBox.addMetadata(directory);
-        } else if (box.type.equals(HeifBoxTypes.BOX_ITEM_LOCATION)) {
-            itemLocationBox = new ItemLocationBox(reader, box);
-        } else if (box.type.equals(HeifBoxTypes.BOX_IMAGE_SPATIAL_EXTENTS)) {
-            ImageSpatialExtentsProperty imageSpatialExtentsProperty = new ImageSpatialExtentsProperty(reader, box);
-            imageSpatialExtentsProperty.addMetadata(directory);
-        } else if (box.type.equals(HeifBoxTypes.BOX_AUXILIARY_TYPE_PROPERTY)) {
-            AuxiliaryTypeProperty auxiliaryTypeProperty = new AuxiliaryTypeProperty(reader, box);
-        } else if (box.type.equals(HeifBoxTypes.BOX_IMAGE_ROTATION)) {
-            ImageRotationBox imageRotationBox = new ImageRotationBox(reader, box);
-            imageRotationBox.addMetadata(directory);
-        } else if (box.type.equals(HeifBoxTypes.BOX_COLOUR_INFO)) {            
-            ColourInformationBox colourInformationBox = new ColourInformationBox(reader, box, metadata);
-            colourInformationBox.addMetadata(directory);            
-        } else if (box.type.equals(HeifBoxTypes.BOX_PIXEL_INFORMATION)) {
-            PixelInformationBox pixelInformationBox = new PixelInformationBox(reader, box);
-            pixelInformationBox.addMetadata(directory);
-        }
-        
-        return this;
-    }
-
-    
+    } 
 
     @Override
     protected void processContainer(@NotNull Box box, @NotNull SequentialReader reader) throws IOException

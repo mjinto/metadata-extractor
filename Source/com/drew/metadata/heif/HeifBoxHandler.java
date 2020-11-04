@@ -19,7 +19,6 @@
  *    https://github.com/drewnoakes/metadata-extractor
  */
 package com.drew.metadata.heif;
-
 import com.drew.imaging.heif.HeifHandler;
 import com.drew.lang.SequentialByteArrayReader;
 import com.drew.lang.SequentialReader;
@@ -81,22 +80,7 @@ public class HeifBoxHandler extends HeifHandler<HeifDirectory>
             }
         }
         return this;
-    }
-    
-    @Override
-    public HeifHandler<?> processBoxToReadBytes(@NotNull Box box, @NotNull byte[] payload) throws IOException
-    {
-        if (payload != null) {
-            SequentialReader reader = new SequentialByteArrayReader(payload);
-            if (box.type.equals(HeifBoxTypes.BOX_FILE_TYPE)) {
-                processFileType(reader, box);
-            } else if (box.type.equals(HeifBoxTypes.BOX_HANDLER)) {
-                handlerBox = new HandlerBox(reader, box);
-                return handlerFactory.getHandler(handlerBox, metadata);
-            }
-        }
-        return this;
-    }
+    }  
 
     @Override
     public void processContainer(@NotNull Box box, @NotNull SequentialReader reader) throws IOException

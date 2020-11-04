@@ -20,9 +20,12 @@
  */
 package com.drew.imaging.heif;
 
+import com.drew.imaging.ImageProcessingException;
 import com.drew.lang.annotations.NotNull;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.heif.HeifBoxHandler;
+
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 
@@ -43,9 +46,9 @@ public class HeifMetadataReader
      * @return Map with byte array of Exif as key and display p3 status as value.     
      */
     @NotNull
-    public static HashMap<byte[], Boolean> getExifAndDisplayP3Info(@NotNull InputStream inputStream)
+    public static HashMap<byte[], Boolean> getExifAndDisplayP3Info(@NotNull InputStream inputStream) throws ImageProcessingException, IOException
     {
         Metadata metadata = new Metadata();
-        return new HeifReader().readBytes(inputStream, new HeifBoxHandler(metadata));       
+        return new HeifReader().extractExifAndICCProfileStream(inputStream, new HeifBoxHandler(metadata));       
     }
 }

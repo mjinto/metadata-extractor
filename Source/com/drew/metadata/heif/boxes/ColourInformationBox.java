@@ -11,21 +11,18 @@ import java.io.IOException;
 /**
  * ISO/IEC 14496-12:2015 pg.159
  */
-public class ColourInformationBox extends Box
-{
+public class ColourInformationBox extends Box {
     String colourType;
     int colourPrimaries;
     int transferCharacteristics;
     int matrixCoefficients;
     int fullRangeFlag;
 
-    public ColourInformationBox(Box box) throws IOException
-    {
-        super(box);        
+    public ColourInformationBox(Box box) throws IOException {
+        super(box);
     }
-    
-    public ColourInformationBox(SequentialReader reader, Box box, Metadata metadata) throws IOException
-    {
+
+    public ColourInformationBox(SequentialReader reader, Box box, Metadata metadata) throws IOException {
         super(box);
 
         colourType = reader.getString(4);
@@ -36,16 +33,15 @@ public class ColourInformationBox extends Box
             // Last 7 bits are reserved
             fullRangeFlag = (reader.getUInt8() & 0x80) >> 7;
         } else if (colourType.equals("rICC")) {
-            byte[] buffer = reader.getBytes((int)(size - 12));
+            byte[] buffer = reader.getBytes((int) (size - 12));
             new IccReader().extract(new ByteArrayReader(buffer), metadata);
         } else if (colourType.equals("prof")) {
-            byte[] buffer = reader.getBytes((int)(size - 12));
+            byte[] buffer = reader.getBytes((int) (size - 12));
             new IccReader().extract(new ByteArrayReader(buffer), metadata);
         }
     }
 
-    public void addMetadata(HeifDirectory directory)
-    {
+    public void addMetadata(HeifDirectory directory) {
 
     }
 }

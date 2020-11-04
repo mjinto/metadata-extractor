@@ -29,7 +29,7 @@ import com.drew.metadata.heif.boxes.Box;
 public abstract class HeifHandler<T extends HeifDirectory>
 {
     protected Metadata metadata;
-    protected T directory;    
+    protected T directory;
 
     public HeifHandler(Metadata metadata)
     {
@@ -41,8 +41,7 @@ public abstract class HeifHandler<T extends HeifDirectory>
     protected abstract T getDirectory();
     protected abstract boolean shouldAcceptBox(@NotNull Box box);
     protected abstract boolean shouldAcceptContainer(@NotNull Box box);
-    protected abstract HeifHandler<?> processBox(@NotNull Box box, @NotNull byte[] payload) throws IOException;
-    protected abstract HeifHandler<?> processBoxToReadBytes(@NotNull Box box, @NotNull byte[] payload) throws IOException;
+    protected abstract HeifHandler<?> processBox(@NotNull Box box, @NotNull byte[] payload) throws IOException;    
     /**
      * There is potential for a box to both contain other boxes and contain information, so this method will
      * handle those occurrences.
