@@ -169,65 +169,12 @@ public class HeifReader {
                         && currentDirectory.getString(IccDirectory.TAG_COLOR_SPACE).trim().toLowerCase().equals("rgb")
                         && currentDirectory.getString(IccDirectory.TAG_PROFILE_CONNECTION_SPACE).trim().toLowerCase().equals("xyz")
                         && currentDirectory.getString(IccDirectory.TAG_XYZ_VALUES).trim().toLowerCase().equals("0.9642 1 0.82491")
-                        && currentDirectory.getDescription(IccDirectory.TAG_MEDIA_WHITE_POINT).trim().toLowerCase().equals("(0.95045, 1, 1.08905)");
-
-                /*
-                 * if (isDisplayP3) { String redColumnMatrix =
-                 * currentDirectory.getDescription(IccDirectory.TAG_RED_COLUMN_MATRIX).trim();
-                 * if (validateMatrixColumnRange(IccDirectory.TAG_RED_COLUMN_MATRIX,
-                 * redColumnMatrix)) { String greenColumnMatrix =
-                 * currentDirectory.getDescription(IccDirectory.TAG_GREEN_COLUMN_MATRIX).trim();
-                 * if (validateMatrixColumnRange(IccDirectory.TAG_GREEN_COLUMN_MATRIX,
-                 * greenColumnMatrix)) { String blueColumnMatrix =
-                 * currentDirectory.getDescription(IccDirectory.TAG_BLUE_COLUMN_MATRIX).trim();
-                 * if (validateMatrixColumnRange(IccDirectory.TAG_BLUE_COLUMN_MATRIX,
-                 * blueColumnMatrix)) { isDisplayP3 = true; } } } }
-                 */
-            } else {
-                throw new ImageProcessingException("ICC Profile is sRGB. DisplayP3 not found.");
-            }
+                        && currentDirectory.getDescription(IccDirectory.TAG_MEDIA_WHITE_POINT).trim().toLowerCase().equals("(0.95045, 1, 1.08905)");                
+            } 
         } catch (Exception ex) {
             throw new ImageProcessingException("Failed to process DisplayP3 data. " + ex.getMessage());
         }
 
         return isDisplayP3;
-    }
-
-    /**
-     * Validates colum matrix values of red, green and blue
-     * 
-     * @param metadata represents the current metadata instance.
-     * @return whether it is display p3 or not
-     */
-    private boolean validateMatrixColumnRange(int tagType, String value) {
-
-        boolean isValid = false;
-        String xyzValues = value.substring(value.indexOf('(') + 1, value.lastIndexOf(')'));
-        String[] values = xyzValues.split(", ");
-        float xVal = 0;
-        float yVal = 0;
-        float zVal = 0;
-
-        if (values.length == 3) {
-            xVal = Float.parseFloat(values[0]);
-            yVal = Float.parseFloat(values[1]);
-            zVal = Float.parseFloat(values[2]);
-
-            switch (tagType) {
-                case IccDirectory.TAG_RED_COLUMN_MATRIX:
-                    isValid = (0.50512 <= xVal && xVal <= 0.52512) && (0.2312 <= yVal && yVal <= 0.2512);
-                    break;
-                case IccDirectory.TAG_GREEN_COLUMN_MATRIX:
-                    isValid = (0.28198 <= xVal && xVal <= 0.30198) && (0.68225 <= yVal && yVal <= 0.70225)
-                            && (0.03189 <= zVal && zVal <= 0.05189);
-                    break;
-                case IccDirectory.TAG_BLUE_COLUMN_MATRIX:
-                    isValid = (0.1471 <= xVal && xVal <= 0.1671) && (0.05657 <= yVal && yVal <= 0.07657)
-                            && (0.77407 <= zVal && zVal <= 0.79407);
-                    break;
-            }
-        }
-
-        return isValid;
-    }
+    }    
 }
