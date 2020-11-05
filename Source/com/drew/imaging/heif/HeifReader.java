@@ -168,8 +168,7 @@ public class HeifReader {
                 isDisplayP3 = currentDirectory.getDescription(IccDirectory.TAG_PROFILE_DESCRIPTION).trim().toLowerCase().equals("display p3")
                         && currentDirectory.getString(IccDirectory.TAG_COLOR_SPACE).trim().toLowerCase().equals("rgb")
                         && currentDirectory.getString(IccDirectory.TAG_PROFILE_CONNECTION_SPACE).trim().toLowerCase().equals("xyz")
-                        && currentDirectory.getString(IccDirectory.TAG_XYZ_VALUES).trim().toLowerCase().equals("0.9642 1 0.82491")
-                        && currentDirectory.getDescription(IccDirectory.TAG_MEDIA_WHITE_POINT).trim().toLowerCase().equals("(0.95045, 1, 1.08905)");                
+                        && currentDirectory.getString(IccDirectory.TAG_XYZ_VALUES).trim().toLowerCase().equals("0.9642 1 0.82491");                
             } 
         } catch (Exception ex) {
             throw new ImageProcessingException("Failed to process DisplayP3 data. " + ex.getMessage());
