@@ -20,8 +20,12 @@
  */
 package com.drew.imaging.heif;
 
+import com.drew.lang.SequentialReader;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.lang.StreamReader;
+import com.drew.metadata.heif.HeifBoxTypes;
+import com.drew.metadata.heif.HeifContainerTypes;
+import com.drew.metadata.heif.HeifDirectory;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.heif.boxes.Box;
 import com.drew.metadata.icc.IccDirectory;
@@ -29,13 +33,102 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 public class HeifReader {
 
-    public void extract(InputStream inputStream, HeifHandler<?> handler) {
-        StreamReader reader = new StreamReader(inputStream);
-        reader.setMotorolaByteOrder(true);
-        processBoxes(reader, -1, handler);
+    /**
+     * Map to hold file type and its metadata
+     */
+    private static final Set<String> ACCEPTABLE_PRE_META_BOX_TYPES = new HashSet<String>(
+            Arrays.asList(HeifBoxTypes.BOX_FILE_TYPE, HeifContainerTypes.BOX_METADATA));
+
+    /**
+     * Iterates through the input stream to find the meta box
+     * 
+     * @param inputStream a stream from which the file data may be read. The stream
+     *                    must be positioned at the beginning of the file's data.
+     * @param handler     the handler class instance .
+     * @return Map with byte array of Exif as key and display p3 status as value.
+     */
+    public void extract(InputStream inputStream, HeifHandler<?> handler) throws ImageProcessingException {
+        // We need to read through the input stream to find the meta box which will tell
+        // us what handler to use
+
+        // The meta box is not necessarily the first box, so we need to mark the input
+        // stream (if we can)
+        // so we can re-read the stream with the proper handler if necessary
+
+        try {
+            boolean markSupported = false;
+            if (inputStream.markSupported()) {
+                markSupported = true;
+                inputStream.mark(inputStream.available() + 1); // +1 since we're going to read past the end of the
+                                                               // stream by 1 byte
+            }
+
+            StreamReader reader = new StreamReader(inputStream);
+            reader.setMotorolaByteOrder(true);
+
+            processTopLevelBoxes(inputStream, reader, -1, handler, markSupported, false);
+        } catch (IOException e) {
+            // Any errors should have been added to the directory
+        }
+    }
+
+    /**
+     * Processes the top level boxes
+     * 
+     * @param inputStream   a stream from which the file data may be read. The
+     *                      stream must be positioned at the beginning of the file's
+     *                      data.
+     * @param reader        the sequential reader class instance .
+     * @param atomEnd       the index of reader
+     * @param handler       the handler class instance
+     * @param markSupported the flag of mark support
+     * @param exifSupported the flag of exif support
+     * @return Map with byte array of Exif as key and display p3 status as value.
+     */
+    private void processTopLevelBoxes(InputStream inputStream, SequentialReader reader, long atomEnd,
+            HeifHandler<?> handler, boolean markSupported, boolean exifSupported)
+            throws ImageProcessingException, IOException {
+        boolean foundMetaBox = false;
+        boolean needToReset = false;
+        try {
+            while (atomEnd == -1 || reader.getPosition() < atomEnd) {
+
+                Box box = new Box(reader);
+
+                if (!foundMetaBox && !ACCEPTABLE_PRE_META_BOX_TYPES.contains(box.type)) {
+                    // If we hit a box that needs a more specific handler (like mdat) without yet
+                    // hitting the meta box,
+                    // we'll need to reset the stream and use the correct handler once we find it
+                    needToReset = true;
+                }
+
+                if (HeifContainerTypes.BOX_METADATA.equalsIgnoreCase(box.type)) {
+                    foundMetaBox = true;
+                }
+
+                handler = processBox(reader, box, handler, exifSupported);
+            }
+        } catch (IOException e) {
+            // Currently, reader relies on IOException to end
+        }
+
+        if (needToReset && markSupported) {
+            inputStream.reset();
+            reader = new StreamReader(inputStream);
+            processBoxes(reader, -1, handler, exifSupported);
+        } else if (needToReset) {
+            HeifDirectory heifDirectory = handler.metadata.getFirstDirectoryOfType(HeifDirectory.class);
+            if (heifDirectory != null) {
+                heifDirectory.addError(
+                        "Unable to extract Exif data because inputStream was not resettable and 'meta' was not first box");
+            }
+        }
     }
 
     /**
@@ -51,9 +144,16 @@ public class HeifReader {
         HashMap<byte[], Boolean> result = new HashMap<byte[], Boolean>();
 
         try {
+            boolean markSupported = false;
+            if (inputStream.markSupported()) {
+                markSupported = true;
+                inputStream.mark(inputStream.available() + 1); // +1 since we're going to read past the end of the
+                                                               // stream by 1 byte
+            }
+
             StreamReader reader = new StreamReader(inputStream);
             reader.setMotorolaByteOrder(true);
-            getExifProfileStream(reader, -1, handler);
+            processTopLevelBoxes(inputStream, reader, -1, handler, markSupported, true);
             result.put(getRequriedExifBytes(handler.metadata.heifExifBytes), ValidateDisplayP3Data(handler.metadata));
         } finally {
 
@@ -99,60 +199,54 @@ public class HeifReader {
         return dataBytes;
     }
 
-    private void processBoxes(StreamReader reader, long atomEnd, HeifHandler<?> handler) {
+    /**
+     * Iterates through the reader to process the box
+     * 
+     * @param reader        the sequential reader class instance .
+     * @param atomEnd       the index of reader
+     * @param handler       the handler class instance
+     * @param exifSupported the flag of exif support
+     * @return data bytes of Exif information.
+     */
+    private HeifHandler<?> processBoxes(SequentialReader reader, long atomEnd, HeifHandler<?> handler,
+            boolean exifSupported) {
         try {
             while (atomEnd == -1 || reader.getPosition() < atomEnd) {
 
                 Box box = new Box(reader);
 
-                // Determine if fourCC is container/atom and process accordingly
-                // Unknown atoms will be skipped
-
-                if (handler.shouldAcceptContainer(box)) {
-                    handler.processContainer(box, reader);
-                    processBoxes(reader, box.size + reader.getPosition() - 8, handler);
-                } else if (handler.shouldAcceptBox(box)) {
-                    handler = handler.processBox(box, reader.getBytes((int) box.size - 8));
-                } else if (box.size > 1) {
-                    reader.skip(box.size - 8);
-                } else if (box.size == -1) {
-                    break;
-                }
+                handler = processBox(reader, box, handler, exifSupported);
             }
         } catch (IOException e) {
             // Currently, reader relies on IOException to end
         }
+        return handler;
     }
 
     /**
-     * Iterates through the given stream reader to fetch required bytes
+     * Process the available boxes
      * 
-     * @param atomEnd represents the current index
-     * @param handler the handler class instance .
+     * @param reader        the sequential reader class instance .
+     * @param atomEnd       the index of reader
+     * @param handler       the handler class instance
+     * @param exifSupported the flag of exif support
+     * @return data bytes of Exif information.
      */
-    private void getExifProfileStream(StreamReader reader, long atomEnd, HeifHandler<?> handler)
-            throws ImageProcessingException {
-        try {
-            while (atomEnd == -1 || reader.getPosition() < atomEnd) {
-
-                Box box = new Box(reader);
-
-                // Determine if fourCC is container/atom and process accordingly
-                // Unknown atoms will be skipped
-
-                if (handler.shouldAcceptContainer(box)) {
-                    handler.processContainerToReadBytes(box, reader);
-                    getExifProfileStream(reader, box.size + reader.getPosition() - 8, handler);
-                } else if (handler.shouldAcceptBox(box)) {
-                    handler = handler.processBox(box, reader.getBytes((int) box.size - 8));
-                } else if (box.size > 1) {
-                    reader.skip(box.size - 8);
-                } else if (box.size == -1) {
-                    break;
-                }
+    private HeifHandler<?> processBox(SequentialReader reader, Box box, HeifHandler<?> handler, boolean exifSupported)
+            throws IOException {
+        if (handler.shouldAcceptContainer(box)) {
+            if (exifSupported) {
+                handler.processContainerToReadBytes(box, reader);
+            } else {
+                handler.processContainer(box, reader);
             }
-        } catch (IOException ex) {
+            handler = processBoxes(reader, box.size + reader.getPosition() - 8, handler, exifSupported);
+        } else if (handler.shouldAcceptBox(box)) {
+            handler = handler.processBox(box, reader.getBytes((int) box.size - 8));
+        } else if (box.size > 1) {
+            reader.skip(box.size - 8);
         }
+        return handler;
     }
 
     /**
@@ -165,15 +259,18 @@ public class HeifReader {
         try {
             IccDirectory currentDirectory = metadata.getFirstDirectoryOfType(IccDirectory.class);
             if (currentDirectory != null) {
-                isDisplayP3 = currentDirectory.getDescription(IccDirectory.TAG_PROFILE_DESCRIPTION).trim().toLowerCase().equals("display p3")
+                isDisplayP3 = currentDirectory.getDescription(IccDirectory.TAG_PROFILE_DESCRIPTION).trim().toLowerCase()
+                        .equals("display p3")
                         && currentDirectory.getString(IccDirectory.TAG_COLOR_SPACE).trim().toLowerCase().equals("rgb")
-                        && currentDirectory.getString(IccDirectory.TAG_PROFILE_CONNECTION_SPACE).trim().toLowerCase().equals("xyz")
-                        && currentDirectory.getString(IccDirectory.TAG_XYZ_VALUES).trim().toLowerCase().equals("0.9642 1 0.82491");                
-            } 
+                        && currentDirectory.getString(IccDirectory.TAG_PROFILE_CONNECTION_SPACE).trim().toLowerCase()
+                                .equals("xyz")
+                        && currentDirectory.getString(IccDirectory.TAG_XYZ_VALUES).trim().toLowerCase()
+                                .equals("0.9642 1 0.82491");
+            }
         } catch (Exception ex) {
             throw new ImageProcessingException("Failed to process DisplayP3 data. " + ex.getMessage());
         }
 
         return isDisplayP3;
-    }    
+    }
 }

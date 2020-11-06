@@ -33,8 +33,11 @@ public class HeifMetadataReader {
     @NotNull
     public static Metadata readMetadata(@NotNull InputStream inputStream) {
         Metadata metadata = new Metadata();
-        new HeifReader().extract(inputStream, new HeifBoxHandler(metadata));
-        return metadata;
+        try {
+            new HeifReader().extract(inputStream, new HeifBoxHandler(metadata));
+        } finally {
+            return metadata;
+        }
     }
 
     /**
